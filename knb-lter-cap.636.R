@@ -34,14 +34,14 @@ library("readr")
 library("readxl")
 
 # reml-helper-functions ----
-source('~/Dropbox (ASU)/localRepos/reml-helper-tools/writeAttributesFn.R')
-source('~/Dropbox (ASU)/localRepos/reml-helper-tools/createKMLFn.R')
-# source('~/Dropbox (ASU)/localRepos/reml-helper-tools/createdataTableFn.R')
-source('~/Dropbox (ASU)/localRepos/reml-helper-tools/createDataTableFromFileFn.R')
-source('~/Dropbox (ASU)/localRepos/reml-helper-tools/address_publisher_contact_language_rights.R')
-source('~/Dropbox (ASU)/localRepos/reml-helper-tools/createOtherEntityFn.R')
-source('~/Dropbox (ASU)/localRepos/reml-helper-tools/createPeople.R')
-source('~/Dropbox (ASU)/localRepos/reml-helper-tools/createFactorsDataframe.R')
+# source('~/localRepos/reml-helper-tools/createdataTableFn.R')
+source('~/localRepos/reml-helper-tools/writeAttributesFn.R')
+source('~/localRepos/reml-helper-tools/createDataTableFromFileFn.R')
+source('~/localRepos/reml-helper-tools/createKMLFn.R')
+source('~/localRepos/reml-helper-tools/address_publisher_contact_language_rights.R')
+source('~/localRepos/reml-helper-tools/createOtherEntityFn.R')
+source('~/localRepos/reml-helper-tools/createPeople.R')
+source('~/localRepos/reml-helper-tools/createFactorsDataframe.R')
 
 # DB connections ----
 con <- dbConnect(MySQL(),
@@ -72,7 +72,7 @@ pg <- dbConnect(dbDriver("PostgreSQL"),
 # dataset details to set first ----
 projectid <- 636
 packageIdent <- 'knb-lter-cap.636.2'
-pubDate <- '2017-02-28'
+pubDate <- '2017-02-27'
 
 # data entity ----
 
@@ -98,14 +98,11 @@ tower_data_ldp <- tower_data_ldp %>%
 # data_frame_name[data_frame_name == ''] <- NA
 
 writeAttributes(tower_data_ldp) # write data frame attributes to a csv in current dir to edit metadata
-
-# unclear why this error is occurring 
-# Error in .External2(C_writetable, x, file, nrow(x), p, rnames, sep, eol,  : 
-#                       unimplemented type 'list' in 'EncodeElement' 
-
 tower_data_ldp_desc <- 'Micrometeoroligical data from a CAP LTER weather station located at the Lost Dutchman State Park, AZ. Data are 10-min averages of measurments collected at 5-second intervals.'
+tower_data_ldp_DT <- createDTFF(dfname = tower_data_ldp,
+                                description = tower_data_ldp_desc)
 
-
+# DBG ----
 
 tower_data_dbg <- dbGetQuery(pg,
 'SELECT
@@ -126,55 +123,42 @@ tower_data_dbg <- tower_data_dbg %>%
 # data processing
 # data_frame_name[data_frame_name == ''] <- NA
 
-# see comments in createdataTableFn.R for doing this piece-by-piece outside of functions
-
-writeAttributes(tower_data_ldp) # write data frame attributes to a csv in current dir to edit metadata
-tower_data_ldp_desc <- "dataframe description"
-
-# address factors if needed
-reach <- c(Tonto = "Salt River, Tonto National Forest, near Usery Road",
-           BM = "Baseline and Meridian Wildlife Area")
-urbanized <- c(urban = "in urban area",
-               NonUrban = "outside urban area")
-restored <- c(Restored = "site received active restoration",
-              NotRestored = "site has not been restored")
-
-dataframe_factors <- factorsToFrame(dataframe)
+writeAttributes(tower_data_dbg) # write data frame attributes to a csv in current dir to edit metadata
+tower_data_dbg_desc <- "Micrometeoroligical data from a CAP LTER weather station located near the Desert Botanical Garden in Papago Park, AZ. Data are 10-min averages of measurments collected at 5-second intervals."
 
 # create data table based on metadata provided in the companion csv
 # use createdataTableFn() if attributes and classes are to be passed directly
-dataframe_DT <- createDTFF(dfname = dataframe,
-                           # factors = dataframe_factors,
-                           description = dataframe_desc)
+tower_data_dbg_DT <- createDTFF(dfname = tower_data_dbg,
+                                description = tower_data_dbg_desc)
 
 
 # title and abstract ----
-title <- 'title of data set'
+# screwed up the title again in version 2 (2010-2016, next time change to ongoing... as below)
+title <- 'CAP LTER weather stations, Papago Park and Lost Dutchman State Park, ongoing since 2010'
 
 # abstract from file or directly as text
-abstract <- as(set_TextType("abstract_as_md_file.md"), "abstract") 
-abstract <- 'abstract text'
+# abstract <- as(set_TextType("abstract_as_md_file.md"), "abstract") 
+abstract <- 'The CAP LTER maintains two 10-m micrometeorological stations in the greater Phoenix metropolitan area, including at Lost Dutchman State Park and near the Desert Botanical Garden at Papago Park. The local terrain at both sites is flat or gently sloping Sonoran desert, and the vegetation canopy consists of patchy coverage of desert shrubs and trees. The dominant vegetation species include bursage (Ambrosia deltoidea) and creosote bush (Larrea tridentata), while minor species include palo verde (Parkinsonia microphylla) and saguaro cactus (Carnegiea gigantea). Wind speed and direction, incoming solar radiation, air temperature, relative humidity, and precipitation (see table below) have been monitored nearly continuously since the fall of 2010. Each variable is measured every 5 seconds and the average (or total for precipitation and total solar radiation) is saved to a data logger every 10 minutes.'
 
 
 # people ----
 
 nancyGrimm <- addCreator('n', 'grimm')
 danChilders <- addCreator('d', 'childers')
-stanFaeth <- addAssocParty('s', 'faeth', 'Former Associate of Study')
-markHostetler <- addAssocParty('m', 'hostetler', 'Former Associate of Study')
-nancyMcintyre <- addAssocParty('n', 'mcintyre', 'Former Associate of Study')
-eyalShochat <- addAssocParty('e', 'shochat', 'Former Associate of Study')
-stevanEarl <- addMetadataProvider('s', 'earl')
+johnAllen <- addCreator('jonathan', 'allen')
+sharonHall <- addCreator('s', 'hall')
+jasonKaye <- addCreator('j', 'kaye')
 
-creators <- c(as(nancyGrimm, 'creator'),
+creators <- c(as(johnAllen, 'creator'),
+              as(nancyGrimm, 'creator'),
+              as(sharonHall, 'creator'),
+              as(jasonKaye, 'creator'),
               as(danChilders, 'creator'))
 
+
+stevanEarl <- addMetadataProvider('s', 'earl')
 metadataProvider <-c(as(stevanEarl, 'metadataProvider'))
 
-associatedParty <- c(as(stanFaeth, 'associatedParty'),
-                     as(markHostetler, 'associatedParty'),
-                     as(nancyMcintyre, 'associatedParty'),
-                     as(eyalShochat, 'associatedParty'))
 
 # keywords ----
 
@@ -184,17 +168,26 @@ associatedParty <- c(as(stanFaeth, 'associatedParty'),
 keywordSet <-
   c(new("keywordSet",
         keywordThesaurus = "LTER controlled vocabulary",
-        keyword =  c("urban",
-                     "dissolved organic carbon",
-                     "total dissolved nitrogen")),
+        keyword =  c("weather",
+                     "urban",
+                     "temperature",
+                     "solar radiation",
+                     "pyranometers",
+                     "precipitation",
+                     "relative humidity",
+                     "wind",
+                     "wind direction",
+                     "wind speed",
+                     "climate")),
     new("keywordSet",
         keywordThesaurus = "LTER core areas",
         keyword =  c("disturbance patterns",
-                     "movement of inorganic matter")),
+                     "climate and heat")),
     new("keywordSet",
         keywordThesaurus = "Creator Defined Keyword Set",
-        keyword =  c("unlisted stuff",
-                     "unlisted stuff")),
+        keyword =  c("lost dutchman state park",
+                     "papago park",
+                     "desert botanical garden")),
     new("keywordSet",
         keywordThesaurus = "CAPLTER Keyword Set List",
         keyword =  c("cap lter",
@@ -204,25 +197,24 @@ keywordSet <-
                      "arizona",
                      "az",
                      "arid land"))
-    )
+  )
 
 # methods and coverages ----
-methods <- set_methods("methods_as_md_file.md")
+methods <- set_methods("636_tower_data_methods.md")
 
-# if relevant, pulling dates from a DB is nice
-# begindate <- dbGetQuery(con, "SELECT MIN(sample_date) AS date FROM database.table;")
-# begindate <- begindate$date
+# begin date will never change, but pull max date from data
+ldp_max_date <- dbGetQuery(pg, "SELECT MAX(timestamp) AS date FROM lter120.ldp_data;")
+dbg_max_date <- dbGetQuery(pg, "SELECT MAX(timestamp) AS date FROM lter120.dbg_data;")
+enddate <- max(ldp_max_date$date, dbg_max_date$date) 
+enddate <- as.character(enddate, format = "%Y-%m-%d")
 
-begindate <- "2005-11-05"
-enddate <- "2015-12-15"
+begindate <- "2006-05-10"
 geographicDescription <- "CAP LTER study area"
 coverage <- set_coverage(begin = begindate,
                          end = enddate,
-                         sci_names = c("Salix spp",
-                                       "Ambrosia deltoidea"),
                          geographicDescription = geographicDescription,
-                         west = -111.949, east = -111.910,
-                         north = +33.437, south = +33.430)
+                         west = -111.9476, east =  -111.9415,
+                         north = +33.4612, south = +33.4554)
 
 # construct the dataset ----
 
@@ -249,8 +241,8 @@ dataset <- new("dataset",
                contact = contact,
                methods = methods,
                distribution = metadata_dist,
-               dataTable = c(first_DT,
-                             second_DT))
+               dataTable = c(tower_data_dbg_DT,
+                             tower_data_ldp_DT))
                # otherEntity = c(core_arthropod_locations)) # if other entity is relevant
 
 # ls(pattern= "_DT") # can help to pull out DTs
@@ -271,21 +263,21 @@ lter_access <- new("access",
                    allow = c(allow_cap,
                              allow_public))
 
-# CUSTOM UNITS ----
+# CUSTOM UNITS
 # standardUnits <- get_unitList()
 # unique(standardUnits$unitTypes$id) # unique unit types
 
 custom_units <- rbind(
-  data.frame(id = "microsiemenPerCentimeter",
-             unitType = "conductance",
-             parentSI = "siemen",
-             multiplierToSI = 0.000001,
-             description = "electric conductance of lake water in the units of microsiemenPerCentimeter"),
-data.frame(id = "nephelometricTurbidityUnit",
-           unitType = "unknown",
-           parentSI = "unknown",
-           multiplierToSI = 1,
-           description = "(NTU) ratio of the amount of light transmitted straight through a water sample with the amount scattered at an angle of 90 degrees to one side"))
+  data.frame(id = "kilowattPerMeterSquared",
+             unitType = "irradiance",
+             parentSI = "wattPerMeterSquared",
+             multiplierToSI = "1000",
+             description = "average amount of energy per square meter of surface during the observation period"),
+  data.frame(id = "megajoulePerMeterSquared",
+             parentSI = "joulePerMeterSquared",
+             unitType = "irradiance",
+             multiplierToSI = "1000000",
+             description = "total amount of energy per square meter of surface during the observation period"))
 unitList <- set_unitList(custom_units)
 
 eml <- new("eml",
@@ -297,4 +289,4 @@ eml <- new("eml",
            additionalMetadata = as(unitList, "additionalMetadata"))
 
 # write the xml to file ----
-write_eml(eml, "out.xml")
+write_eml(eml, "knb-lter-cap.636.2.xml")
