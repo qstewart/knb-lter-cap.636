@@ -1,5 +1,11 @@
 
 # README ----
+# 
+# Just noticed when publishing version 3 that the spatial coverage includes only DBG - need to add coverage for LDP as well at the next upload.
+# 
+# Recall that this version 3 is the dataset that I had inexplicable problems loading into PASTA, and, ultimately, Duane had to do it for me:
+#   
+#   An entity file is missing from the data repository: entityDir: /pasta/data1; packageId: knb-lter-cap.636.3; entity id: 0f3c24ead461ea09a0f18695eb0d9a94
 
 # reml slots ----
 getSlots("dataset")
