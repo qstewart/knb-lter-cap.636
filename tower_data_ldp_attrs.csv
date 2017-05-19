@@ -1,10 +1,10 @@
-attributeName,formatString,unit,numberType,definition,attributeDefinition,columnClasses,minimum,maximum
+attributeName,formatString,unit,numberType,definition,attributeDefinition,columnClasses,missingValueCode,missingValueCodeExplanation
 site_code,,,,study location,study location,character,,
-timestamp,YYYY-MM-DD HH:MM:SS,,,,date and time of observation,Date,,
-airtc_avg,,celsius,real,,air temperature,numeric,,
-rh,,dimensionless,real,,relative humidity,numeric,,
-slrkw_avg,,kilowattPerMeterSquared,real,,average solar radiation,numeric,,
-slrmj_tot,,megajoulePerMeterSquared,real,,total solar radiation,numeric,,
+timestamp,YYYY-MM-DD hh:mm:ss,,,,date and time of observation,Date,,
+airtc_avg,,celsius,real,,air temperature,numeric,NaN,not a number
+rh,,dimensionless,real,,relative humidity,numeric,NaN,not a number
+slrkw_avg,,kilowattPerMeterSquared,real,,average solar radiation,numeric,NaN,not a number
+slrmj_tot,,megajoulePerMeterSquared,real,,total solar radiation,numeric,NaN,not a number
 ws_ms_avg,,metersPerSecond,real,,wind speed,numeric,,
-wind_dir,,degree,real,,wind direction,numeric,,
+wind_dir,,degree,real,,wind direction,numeric,NaN,not a number
 rain_mm_tot,,millimeter,real,,precipitation,numeric,,

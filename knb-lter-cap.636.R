@@ -56,7 +56,6 @@ prod <- dbConnect(MySQL(),
                  dbname='gios2_production',
                  host='mysql.prod.aws.gios.asu.edu')
 
-
 pg <- dbConnect(dbDriver("PostgreSQL"),
                  user="srearl",
                  dbname="working",
@@ -64,15 +63,15 @@ pg <- dbConnect(dbDriver("PostgreSQL"),
                  password=.rs.askForPassword("Enter password:"))
 
 pg <- dbConnect(dbDriver("PostgreSQL"),
-                 user="srearl",
-                 dbname="caplter",
-                 host="stegosaurus.gios.asu.edu",
-                 password=.rs.askForPassword("Enter password:"))
+                user="srearl",
+                dbname="caplter",
+                host="postgresql.research.gios.asu.edu",
+                password=.rs.askForPassword("Enter password:"))
 
 # dataset details to set first ----
 projectid <- 636
-packageIdent <- 'knb-lter-cap.636.2'
-pubDate <- '2017-02-27'
+packageIdent <- 'knb-lter-cap.636.3'
+pubDate <- '2017-05-18'
 
 # data entity ----
 
@@ -94,13 +93,20 @@ tower_data_ldp <- tower_data_ldp %>%
   select(site_code, timestamp:rain_mm_tot) %>%
   arrange(timestamp)
 
-# data processing
-# data_frame_name[data_frame_name == ''] <- NA
+# tower_data_ldp[,tower_data_ldp == ''] <- NA # stymied by the date col
+# tower_data_ldp[, -2][tower_data_ldp[, -2] == ''] <- NA # this migtht work but not sure it is needed
+
 
 writeAttributes(tower_data_ldp) # write data frame attributes to a csv in current dir to edit metadata
 tower_data_ldp_desc <- 'Micrometeoroligical data from a CAP LTER weather station located at the Lost Dutchman State Park, AZ. Data are 10-min averages of measurments collected at 5-second intervals.'
 tower_data_ldp_DT <- createDTFF(dfname = tower_data_ldp,
                                 description = tower_data_ldp_desc)
+
+# !!!!!!!!!!!!!
+#
+# CAREFUL WITH ATTRS - AT THE TIME OF THIS WRITING, MULTIPLE MISSING VALUE CODES ARE NOT SUPPORTED FROM THE TEMPLATE, SO NAs and NaNs NEED TO BE ADDRESSED BY HAND (AS DO NAs GENERALLY EVEN WHEN ALONE)
+#
+# !!!!!!!!!!!!!
 
 # DBG ----
 
@@ -120,9 +126,6 @@ tower_data_dbg <- tower_data_dbg %>%
   select(site_code, timestamp:rain_mm_tot) %>% 
   arrange(timestamp)
 
-# data processing
-# data_frame_name[data_frame_name == ''] <- NA
-
 writeAttributes(tower_data_dbg) # write data frame attributes to a csv in current dir to edit metadata
 tower_data_dbg_desc <- "Micrometeoroligical data from a CAP LTER weather station located near the Desert Botanical Garden in Papago Park, AZ. Data are 10-min averages of measurments collected at 5-second intervals."
 
@@ -131,10 +134,15 @@ tower_data_dbg_desc <- "Micrometeoroligical data from a CAP LTER weather station
 tower_data_dbg_DT <- createDTFF(dfname = tower_data_dbg,
                                 description = tower_data_dbg_desc)
 
+# !!!!!!!!!!!!!
+#
+# CAREFUL WITH ATTRS - AT THE TIME OF THIS WRITING, MULTIPLE MISSING VALUE CODES ARE NOT SUPPORTED FROM THE TEMPLATE, SO NAs and NaNs NEED TO BE ADDRESSED BY HAND (AS DO NAs GENERALLY EVEN WHEN ALONE)
+#
+# !!!!!!!!!!!!!
 
 # title and abstract ----
 # screwed up the title again in version 2 (2010-2016, next time change to ongoing... as below)
-title <- 'CAP LTER weather stations, Papago Park and Lost Dutchman State Park, ongoing since 2010'
+title <- 'CAP LTER weather stations at Papago Park and Lost Dutchman State Park in the greater Phoenix metropolitan area, ongoing since 2010'
 
 # abstract from file or directly as text
 # abstract <- as(set_TextType("abstract_as_md_file.md"), "abstract") 
@@ -289,4 +297,6 @@ eml <- new("eml",
            additionalMetadata = as(unitList, "additionalMetadata"))
 
 # write the xml to file ----
-write_eml(eml, "knb-lter-cap.636.2.xml")
+# write_eml(eml, "knb-lter-cap.636.2.xml")
+write_eml(tower_data_ldp_DT, "tower_data_ldp.xml")
+write_eml(tower_data_dbg_DT, "tower_data_dbg.xml")
