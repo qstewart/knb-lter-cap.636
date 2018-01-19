@@ -1,46 +1,28 @@
 
-# README ----
-# 
-# Just noticed when publishing version 3 that the spatial coverage includes only DBG - need to add coverage for LDP as well at the next upload.
-# 
-# Recall that this version 3 is the dataset that I had inexplicable problems loading into PASTA, and, ultimately, Duane had to do it for me:
-#   
-#   An entity file is missing from the data repository: entityDir: /pasta/data1; packageId: knb-lter-cap.636.3; entity id: 0f3c24ead461ea09a0f18695eb0d9a94
+# README ------------------------------------------------------------------
 
-# reml slots ----
-getSlots("dataset")
-  getSlots("distribution")
-  getSlots("keywordSet")
-    getSlots("keyword")
-getSlots("dataTable")
-getSlots("physical")
-  getSlots("dataFormat")
-    getSlots("textFormat")
-  getSlots("size")
-  getSlots("distribution")
-    getSlots("online")
-      getSlots("url")
-getSlots("additionalInfo")
-  getSlots("section")
-  getSlots("para")
-getSlots("metadataProvider")
-  getSlots("individualName")
-  getSlots("userId")
-getSlots("creator")
-  getSlots("individualName")
-  getSlots("userId")
+# Just noticed when publishing version 3 that the spatial coverage includes only
+# DBG - need to add coverage for LDP as well at the next upload.
+#
+# Recall that this version 3 is the dataset that I had inexplicable problems
+# loading into PASTA, and, ultimately, Duane had to do it for me:
+#
+# An entity file is missing from the data repository: entityDir: /pasta/data1;
+# packageId: knb-lter-cap.636.3; entity id: 0f3c24ead461ea09a0f18695eb0d9a94
 
-# libraries ----
-library("EML")
-library('RPostgreSQL')
-library('RMySQL')
-library('tidyverse')
-library("tools")
-library("readr")
-library("readxl")
 
-# reml-helper-functions ----
-# source('~/localRepos/reml-helper-tools/createdataTableFn.R')
+# libraries ---------------------------------------------------------------
+library(EML)
+library(RPostgreSQL)
+library(RMySQL)
+library(tidyverse)
+library(tools)
+library(readxl)
+library(aws.s3)
+library(capeml)
+  
+
+# reml-helper-functions ---------------------------------------------------
 source('~/localRepos/reml-helper-tools/writeAttributesFn.R')
 source('~/localRepos/reml-helper-tools/createDataTableFromFileFn.R')
 source('~/localRepos/reml-helper-tools/createKMLFn.R')
@@ -48,38 +30,31 @@ source('~/localRepos/reml-helper-tools/address_publisher_contact_language_rights
 source('~/localRepos/reml-helper-tools/createOtherEntityFn.R')
 source('~/localRepos/reml-helper-tools/createPeople.R')
 source('~/localRepos/reml-helper-tools/createFactorsDataframe.R')
+  
 
-# DB connections ----
-con <- dbConnect(MySQL(),
-                 user='srearl',
-                 password=.rs.askForPassword("Enter password:"),
-                 dbname='',
-                 host='stegosaurus.gios.asu.edu')
+# connections -------------------------------------------------------------
 
-prod <- dbConnect(MySQL(),
-                 user='srearl',
-                 password=.rs.askForPassword("Enter password:"),
-                 dbname='gios2_production',
-                 host='mysql.prod.aws.gios.asu.edu')
+# Amazon
+source('~/Documents/localSettings/aws.s3')
+  
+# postgres
+source('~/Documents/localSettings/pg_prod.R')
+source('~/Documents/localSettings/pg_local.R')
+  
+pg <- pg_prod
+pg <- pg_local
 
-pg <- dbConnect(dbDriver("PostgreSQL"),
-                 user="srearl",
-                 dbname="working",
-                 host="localhost",
-                 password=.rs.askForPassword("Enter password:"))
-
-pg <- dbConnect(dbDriver("PostgreSQL"),
-                user="srearl",
-                dbname="caplter",
-                host="postgresql.research.gios.asu.edu",
-                password=.rs.askForPassword("Enter password:"))
+# mysql
+source('~/Documents/localSettings/mysql_prod.R')
+prod <- mysql_prod
 
 # dataset details to set first ----
 projectid <- 636
 packageIdent <- 'knb-lter-cap.636.3'
 pubDate <- '2017-05-18'
 
-# data entity ----
+
+# data entity -------------------------------------------------------------
 
 # LDP ----
 
