@@ -81,7 +81,8 @@ tower_data_ldp <- tower_data_ldp %>%
 writeAttributes(tower_data_ldp) # write data frame attributes to a csv in current dir to edit metadata
 tower_data_ldp_desc <- 'Micrometeoroligical data from a CAP LTER weather station located at the Lost Dutchman State Park, AZ. Data are 10-min averages of measurments collected at 5-second intervals.'
 tower_data_ldp_DT <- createDTFF(dfname = tower_data_ldp,
-                                description = tower_data_ldp_desc)
+                                description = tower_data_ldp_desc,
+                                dateRangeField = timestamp)
 
 # !!!!!!!!!!!!!
 #
@@ -113,7 +114,8 @@ tower_data_dbg_desc <- "Micrometeoroligical data from a CAP LTER weather station
 # create data table based on metadata provided in the companion csv
 # use createdataTableFn() if attributes and classes are to be passed directly
 tower_data_dbg_DT <- createDTFF(dfname = tower_data_dbg,
-                                description = tower_data_dbg_desc)
+                                description = tower_data_dbg_desc,
+                                dateRangeField = timestamp)
 
 # !!!!!!!!!!!!!
 #

@@ -1,10 +1,10 @@
-attributeName,formatString,unit,numberType,definition,attributeDefinition,columnClasses,missingValueCode,missingValueCodeExplanation
-site_code,,,,study location,study location,character,,
-timestamp,YYYY-MM-DD hh:mm:ss,,,,date and time of observation,Date,,
-airtc_avg,,celsius,real,,air temperature,numeric,NaN,not a number
-rh,,dimensionless,real,,relative humidity,numeric,,
-slrkw_avg,,kilowattPerMeterSquared,real,,average solar radiation,numeric,NaN,not a number
-slrmj_tot,,megajoulePerMeterSquared,real,,total solar radiation,numeric,NaN,not a number
-ws_ms_avg,,metersPerSecond,real,,wind speed,numeric,,
-wind_dir,,degree,real,,wind direction,numeric,NA,missing value
-rain_mm_tot,,millimeter,real,,precipitation,numeric,,
+attributeName,formatString,unit,numberType,definition,attributeDefinition,columnClasses,minimum,maximum,missingValueCode,missingValueCodeExplanation
+site_code,,,,study location,study location,character,,,,
+timestamp,YYYY-MM-DD hh:mm:ss,,,,date and time of observation,Date,,,,
+airtc_avg,,celsius,real,,air temperature,numeric,-45.13,48.01,NA,missing value
+rh,,dimensionless,real,,relative humidity,numeric,-0.338,113.7,,
+slrkw_avg,,kilowattPerMeterSquared,real,,average solar radiation,numeric,0,1.298,NA,missing value
+slrmj_tot,,megajoulePerMeterSquared,real,,total solar radiation,numeric,0,0.7786608,NA,missing value
+ws_ms_avg,,metersPerSecond,real,,wind speed,numeric,0,14.82,,
+wind_dir,,degree,real,,wind direction,numeric,-4.216,354.6,,
+rain_mm_tot,,millimeter,real,,precipitation,numeric,0,14.48,,
