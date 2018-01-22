@@ -50,8 +50,8 @@ prod <- mysql_prod
 
 # dataset details to set first ----
 projectid <- 636
-packageIdent <- 'knb-lter-cap.636.3'
-pubDate <- '2017-05-18'
+packageIdent <- 'knb-lter-cap.636.4'
+pubDate <- '2018-01-22'
 
 
 # data entity -------------------------------------------------------------
@@ -82,7 +82,7 @@ writeAttributes(tower_data_ldp) # write data frame attributes to a csv in curren
 tower_data_ldp_desc <- 'Micrometeoroligical data from a CAP LTER weather station located at the Lost Dutchman State Park, AZ. Data are 10-min averages of measurments collected at 5-second intervals.'
 tower_data_ldp_DT <- createDTFF(dfname = tower_data_ldp,
                                 description = tower_data_ldp_desc,
-                                dateRangeField = timestamp)
+                                dateRangeField = 'timestamp')
 
 # !!!!!!!!!!!!!
 #
@@ -115,7 +115,7 @@ tower_data_dbg_desc <- "Micrometeoroligical data from a CAP LTER weather station
 # use createdataTableFn() if attributes and classes are to be passed directly
 tower_data_dbg_DT <- createDTFF(dfname = tower_data_dbg,
                                 description = tower_data_dbg_desc,
-                                dateRangeField = timestamp)
+                                dateRangeField = 'timestamp')
 
 # !!!!!!!!!!!!!
 #
@@ -254,7 +254,9 @@ lter_access <- new("access",
                    allow = c(allow_cap,
                              allow_public))
 
-# CUSTOM UNITS
+
+# custom units ------------------------------------------------------------
+
 # standardUnits <- get_unitList()
 # unique(standardUnits$unitTypes$id) # unique unit types
 
@@ -283,3 +285,51 @@ eml <- new("eml",
 # write_eml(eml, "knb-lter-cap.636.2.xml")
 write_eml(tower_data_ldp_DT, "tower_data_ldp.xml")
 write_eml(tower_data_dbg_DT, "tower_data_dbg.xml")
+
+
+# S3 ----------------------------------------------------------------------
+
+# misc commands
+
+# get list of buckets
+# bucketlist()
+# 
+# add an object to S3 - datasets
+# put_object(file = '649_maintenance_log_dd68e293482738ac6f05303d473687a2.csv',
+#            object = '/datasets/cap/649_maintenance_log_dd68e293482738ac6f05303d473687a2.csv',
+#            bucket = 'gios-data')
+# 
+# add an object to S3 - metadata
+# put_object(file = '~/Dropbox/development/knb-lter-cap.650.1/knb-lter-cap.650.1.xml',
+#            object = '/metadata/knb-lter-cap.650.1.xml',
+#            bucket = 'gios-data')
+# 
+# get files in the gios-data bucket with the prefix datasets/cap/650
+# get_bucket(bucket = 'gios-data',
+#            prefix = 'datasets/cap/650')
+
+# data file to S3
+dataToAmz <- function(fileToUpload) {
+  
+  put_object(file = fileToUpload,
+             object = paste0('/datasets/cap/', basename(fileToUpload)),
+             bucket = 'gios-data') 
+  
+}
+
+# example
+dataToAmz('636_tower_data_dbg_98a15d4dbc4bf111aedf6e017f1f0d51.csv')
+dataToAmz('636_tower_data_ldp_af0f40bafd2b3029ea7e6784280e41cd.csv')
+
+
+# metadata file to S3
+emlToAmz <- function(fileToUpload) {
+  
+  put_object(file = fileToUpload,
+             object = paste0('/metadata/', basename(fileToUpload)),
+             bucket = 'gios-data') 
+  
+}
+
+# example
+# emlToAmz('~/localRepos/cap-data/cap-data-eml/knb-lter-cap.650.1.xml')
