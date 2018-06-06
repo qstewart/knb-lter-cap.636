@@ -1,5 +1,14 @@
 # README
 
+# UPDATE 2018-06-05. I changed the workflow slightly such that data, which all
+# come in as characters, are changed to numeric in R instead of in the database
+# temporary table - this is more conducive to any error checking we might want
+# to do. Specific to this update, the rain gauge at LDP was vandalized. Because
+# we do not know when this happened, I changed all precip. data since when the
+# data were last downloaded (2017-12-19 11:30:00) to NA. We likely lost some
+# good data with that approach but that is preferable to housing any erroneous
+# data.
+
 # Ryan's Ruby script for uploading 10-m tower data to the database has become
 # unworkable owing to it performing actions on every row in the database, not
 # just the new data to upload - translating to hours of runtime, which will only
@@ -39,13 +48,24 @@ analyses_metadata <- dbGetQuery(pg, "SELECT * FROM lter120.variables;")
 
 # new data ----------------------------------------------------------------
 
-newdata <- read_csv('~/localRepos/lter120tower-ruby/LDP_CR1000_TenMin_20171220.dat', skip = 1) %>% 
+newdata <- read_csv('~/Desktop/LDP_050218.dat', skip = 1) %>% 
   slice(-c(1:2)) %>% 
   set_names(tolower(names(.)))
 
-newdata <- read_csv('~/localRepos/lter120tower-ruby/DBG_CR1000_TenMin_20171220.dat', skip = 1) %>% 
-  slice(-c(1:2)) %>% 
-  set_names(tolower(names(.)))
+newdata <- newdata %>% 
+  mutate(
+    timestamp = as.POSIXct(timestamp, format = "%Y-%m-%d %H:%M:%S"),
+    airtc_avg = as.numeric(airtc_avg),
+    rh = as.numeric(rh),
+    slrkw_avg = as.numeric(slrkw_avg),
+    slrmj_tot = as.numeric(slrmj_tot),
+    ws_ms_avg = as.numeric(ws_ms_avg),
+    winddir = as.numeric(winddir),
+    rain_mm_tot = as.numeric(rain_mm_tot)
+  )
+
+
+# quality control ---------------------------------------------------------
 
 # check to see if there are any duplicates
 nrow(newdata %>% group_by(timestamp) %>% filter(n() > 1))
@@ -54,6 +74,7 @@ nrow(newdata %>% group_by(timestamp) %>% filter(n() > 1))
 # newdata %>% distinct(TIMESTAMP, .keep_all = T) # purge duplicates
 
 # have a quick look at the data
+
 newdata %>% 
   select(-timestamp, -record) %>% 
   gather(key = analyte, value = value) %>% 
@@ -65,20 +86,34 @@ newdata %>%
     max = max(value, na.rm = T)
   )
 
+newdata %>% 
+  ggplot(aes(x = timestamp, y = rain_mm_tot)) +
+  geom_point()
+
+newdata %>% 
+  ggplot(aes(x = timestamp, y = airtc_avg)) +
+  geom_point()
+
+
+# write to temporary table ------------------------------------------------
+
 if (dbExistsTable(pg, c('lter120', 'temp_data_table'))) dbRemoveTable(pg, c('lter120', 'temp_data_table')) # make sure tbl does not exist
 dbWriteTable(pg, c('lter120', 'temp_data_table'), value = newdata, row.names = F)
 
 dbExecute(pg, '
           ALTER TABLE lter120.temp_data_table
             ALTER COLUMN "timestamp" TYPE timestamp without time zone USING "timestamp"::timestamp without time zone,
-            ALTER COLUMN record TYPE numeric USING record::numeric,
-            ALTER COLUMN airtc_avg TYPE numeric USING airtc_avg::numeric,
-            ALTER COLUMN rh TYPE numeric USING rh::numeric,
-            ALTER COLUMN slrkw_avg TYPE numeric USING slrkw_avg::numeric,
-            ALTER COLUMN slrmj_tot TYPE numeric USING slrmj_tot::numeric, 
-            ALTER COLUMN ws_ms_avg TYPE numeric USING ws_ms_avg::numeric,
-            ALTER COLUMN winddir TYPE numeric USING winddir::numeric,
-            ALTER COLUMN rain_mm_tot TYPE numeric USING rain_mm_tot::numeric;')
+            ALTER COLUMN record TYPE numeric USING record::numeric;')
+
+            # changed workflow such that most column types are changed to numeric in R above
+
+            # ALTER COLUMN airtc_avg TYPE numeric USING airtc_avg::numeric,
+            # ALTER COLUMN rh TYPE numeric USING rh::numeric,
+            # ALTER COLUMN slrkw_avg TYPE numeric USING slrkw_avg::numeric,
+            # ALTER COLUMN slrmj_tot TYPE numeric USING slrmj_tot::numeric, 
+            # ALTER COLUMN ws_ms_avg TYPE numeric USING ws_ms_avg::numeric,
+            # ALTER COLUMN winddir TYPE numeric USING winddir::numeric,
+            # ALTER COLUMN rain_mm_tot TYPE numeric USING rain_mm_tot::numeric;')
 
 
 # LDP insert --------------------------------------------------------------

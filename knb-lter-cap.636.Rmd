@@ -1,0 +1,374 @@
+---
+title: "remlTemplate"
+author: "SRE"
+date: "March 14, 2018"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# README
+
+Workflow moved to Rmd for the 2018-06-05 update.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries}
+library(EML)
+library(RPostgreSQL)
+library(RMySQL)
+library(tidyverse)
+library(tools)
+library(readxl)
+library(aws.s3)
+library(capeml)
+```
+
+```{r dataset_details}
+projectid <- 636
+packageIdent <- 'knb-lter-cap.636.5'
+pubDate <- as.character(Sys.Date())
+```
+ 
+```{r helper_functions}
+source('~/localRepos/reml-helper-tools/writeAttributesFn.R')
+source('~/localRepos/reml-helper-tools/createDataTableFromFileFn.R')
+source('~/localRepos/reml-helper-tools/createKMLFn.R')
+source('~/localRepos/reml-helper-tools/address_publisher_contact_language_rights.R')
+source('~/localRepos/reml-helper-tools/createOtherEntityFn.R')
+source('~/localRepos/reml-helper-tools/createPeople.R')
+source('~/localRepos/reml-helper-tools/createFactorsDataframe.R')
+source('~/localRepos/reml-helper-tools/amazon_file_upload.R')
+```
+
+```{r connections::amazon}
+source('~/Documents/localSettings/aws.s3')
+```
+
+```{r connections::postgres::local, eval=FALSE}
+source('~/Documents/localSettings/pg_local.R')
+pg <- pg_local
+```
+
+```{r connections::postgres::prod, eval=T }
+source('~/Documents/localSettings/pg_prod.R')
+pg <- pg_prod
+```
+
+```{r connections::mysql::prod, eval=T }
+source('~/Documents/localSettings/mysql_prod.R')
+mysql_prod <- mysql_prod_connect('database_name')
+prod <- mysql_prod
+```
+
+# CAREFUL WITH ATTRS - AT THE TIME OF THIS WRITING, MULTIPLE MISSING VALUE CODES ARE NOT SUPPORTED FROM THE TEMPLATE, SO NAs and NaNs NEED TO BE ADDRESSED BY HAND (AS DO NAs GENERALLY EVEN WHEN ALONE)
+
+```{r LDP}
+
+tower_data_ldp <- dbGetQuery(pg,
+'SELECT
+  "timestamp",
+  airtc_avg,
+  rh, slrkw_avg,
+  slrmj_tot,
+  ws_ms_avg,
+  wind_dir,
+  rain_mm_tot
+FROM lter120.ldp_data;')
+
+tower_data_ldp <- tower_data_ldp %>%
+  mutate(site_code = "Lost Dutchman State Park (LDP)") %>%
+  select(site_code, timestamp:rain_mm_tot) %>%
+  arrange(timestamp)
+
+# writeAttributes(data_element) # write data frame attributes to a csv in current dir to edit metadata
+# factorsToFrame(data_element) # write data frame factors to a csv in current dir to edit metadata
+
+tower_data_ldp_desc <- 'Micrometeoroligical data from a CAP LTER weather station located at the Lost Dutchman State Park, AZ. Data are 10-min averages of measurments collected at 5-second intervals.'
+
+# create data table based on metadata provided in the companion csv
+# use createdataTableFn() if attributes and classes are to be passed directly
+tower_data_ldp_DT <- createDTFF(dfname = tower_data_ldp,
+                                description = tower_data_ldp_desc,
+                                dateRangeField = 'timestamp')
+```
+
+# CAREFUL WITH ATTRS - AT THE TIME OF THIS WRITING, MULTIPLE MISSING VALUE CODES ARE NOT SUPPORTED FROM THE TEMPLATE, SO NAs and NaNs NEED TO BE ADDRESSED BY HAND (AS DO NAs GENERALLY EVEN WHEN ALONE)
+
+```{r DBG}
+
+tower_data_dbg <- dbGetQuery(pg,
+'SELECT
+  "timestamp",
+  airtc_avg,
+  rh, slrkw_avg,
+  slrmj_tot,
+  ws_ms_avg,
+  wind_dir,
+  rain_mm_tot
+FROM lter120.dbg_data;')
+
+tower_data_dbg <- tower_data_dbg %>%
+  mutate(site_code = "Desert Botanical Garden (DBG)") %>%
+  select(site_code, timestamp:rain_mm_tot) %>% 
+  arrange(timestamp)
+
+# writeAttributes(data_element) # write data frame attributes to a csv in current dir to edit metadata
+# factorsToFrame(data_element) # write data frame factors to a csv in current dir to edit metadata
+
+tower_data_dbg_desc <- "Micrometeoroligical data from a CAP LTER weather station located near the Desert Botanical Garden in Papago Park, AZ. Data are 10-min averages of measurments collected at 5-second intervals."
+
+# create data table based on metadata provided in the companion csv
+# use createdataTableFn() if attributes and classes are to be passed directly
+tower_data_dbg_DT <- createDTFF(dfname = tower_data_dbg,
+                                description = tower_data_dbg_desc,
+                                dateRangeField = 'timestamp')
+
+```
+
+```{r title}
+
+title <- 'CAP LTER weather stations at Papago Park and Lost Dutchman State Park in the greater Phoenix metropolitan area, ongoing since 2010'
+```
+
+```{r abstract}
+
+abstract <- as(set_TextType("abstract.md"), "abstract") 
+```
+
+```{r people}
+
+mysql_prod <- mysql_prod_connect('gios2_production')
+
+nancyGrimm <- addCreator('n', 'grimm')
+danChilders <- addCreator('d', 'childers')
+johnAllen <- addCreator('jonathan', 'allen')
+sharonHall <- addCreator('sharo', 'hall')
+jasonKaye <- addCreator('jason', 'kaye')
+
+creators <- c(as(johnAllen, 'creator'),
+              as(nancyGrimm, 'creator'),
+              as(sharonHall, 'creator'),
+              as(jasonKaye, 'creator'),
+              as(danChilders, 'creator'))
+
+
+stevanEarl <- addMetadataProvider('s', 'earl')
+royErickson <- addMetadataProvider('r', 'erickson')
+
+metadataProvider <- c(as(stevanEarl, 'metadataProvider'),
+                      as(royErickson, 'metadataProvider'))
+```
+
+```{r keywords}
+
+# CAP IRTs for reference (be sure to include these as appropriate):
+# https://sustainability.asu.edu/caplter/research/
+
+keywords <- create_keywordSet('keywords.csv')
+
+```
+
+```{r methods}
+
+methods <- set_methods("methods.md")
+```
+
+```{r coverages}
+
+# begin date will never change, but pull max date from data
+ldp_max_date <- dbGetQuery(pg, "SELECT MAX(timestamp) AS date FROM lter120.ldp_data;")
+dbg_max_date <- dbGetQuery(pg, "SELECT MAX(timestamp) AS date FROM lter120.dbg_data;")
+enddate <- max(ldp_max_date$date, dbg_max_date$date) 
+enddate <- as.character(enddate, format = "%Y-%m-%d")
+
+# begindate <- "2006-05-10"
+# geographicDescription <- "CAP LTER study area"
+# coverage <- set_coverage(begin = begindate,
+#                          end = enddate,
+#                          geographicDescription = geographicDescription,
+#                          west = -111.9476, east =  -111.9415,
+#                          north = +33.4612, south = +33.4554)
+
+
+# modified coverage workflow to accomodate multiple geographic coverages
+
+# LDP geo
+
+ldpCoords <- new('boundingCoordinates',
+                 westBoundingCoordinate = "-111.4795",
+                 eastBoundingCoordinate = "-111.4789",
+                 northBoundingCoordinate = "33.4626",
+                 southBoundingCoordinate = "33.4622"
+)
+
+ldpGeo <- new('geographicCoverage',
+    geographicDescription = "CAP LTER site at Lost Dutchman State Park",
+    boundingCoordinates = ldpCoords)
+
+# DBG geo
+
+dbgCoords <- new('boundingCoordinates',
+                 westBoundingCoordinate = "-111.9476",
+                 eastBoundingCoordinate = "-111.9415",
+                 northBoundingCoordinate = "33.4612",
+                 southBoundingCoordinate = "33.4554"
+)
+
+dbgGeo <- new('geographicCoverage',
+              geographicDescription = "CAP LTER site at the Desert Botanical Garden",
+              boundingCoordinates = ldpCoords)
+
+# temporal
+
+first <- new("calendarDate",
+             begindate)
+last <- new("calendarDate",
+             enddate)
+
+begin <- new("beginDate")
+  begin@calendarDate <- first
+
+end <- new("endDate")
+  end@calendarDate <- last
+
+extent <- new("rangeOfDates",
+              beginDate = begin,
+              endDate = end)
+
+temporal <- new("temporalCoverage",
+                rangeOfDates = extent)
+
+# coverage
+
+coverage <- new("coverage",
+                temporalCoverage = temporal,
+                geographicCoverage = c(ldpGeo, dbgGeo))
+
+```
+
+```{r construct_dataset}
+
+# from sourced file:
+  # address
+  # publisher
+  # contact
+  # rights
+  # distribution
+
+# generate a list of EML dataTables
+listOfDataTables <- lapply(ls(pattern = "_DT"), function(DT) { get(DT) } )
+
+# print list as a safety step
+print(ls(pattern= "_DT"))
+
+# DATASET
+dataset <- new("dataset",
+               title = title,
+               creator = creators,
+               pubDate = pubDate,
+               metadataProvider = metadataProvider,
+               # associatedParty = associatedParty,
+               intellectualRights = rights,
+               abstract = abstract,
+               keywordSet = keywords,
+               coverage = coverage,
+               contact = contact,
+               methods = methods,
+               distribution = metadata_dist,
+               dataTable = listOfDataTables)
+
+               # dataTable = c(first_DT,
+               #               second_DT))
+
+```
+
+```{r custom_units, eval=FALSE}
+
+custom_units <- rbind(
+  data.frame(id = "kilowattPerMeterSquared",
+             unitType = "irradiance",
+             parentSI = "wattPerMeterSquared",
+             multiplierToSI = "1000",
+             description = "average amount of energy per square meter of surface during the observation period"),
+  data.frame(id = "megajoulePerMeterSquared",
+             parentSI = "joulePerMeterSquared",
+             unitType = "irradiance",
+             multiplierToSI = "1000000",
+             description = "total amount of energy per square meter of surface during the observation period"))
+unitList <- set_unitList(custom_units)
+
+```
+
+```{r construct_eml}
+
+if(exists('unitList')) {
+  eml <- new("eml",
+             schemaLocation = "eml://ecoinformatics.org/eml-2.1.1  http://nis.lternet.edu/schemas/EML/eml-2.1.1/eml.xsd",
+             packageId = packageIdent,
+             scope = "system",
+             system = "knb",
+             access = lter_access,
+             dataset = dataset,
+             additionalMetadata = as(unitList, "additionalMetadata"))
+} else {
+  eml <- new("eml",
+             schemaLocation = "eml://ecoinformatics.org/eml-2.1.1  http://nis.lternet.edu/schemas/EML/eml-2.1.1/eml.xsd",
+             packageId = packageIdent,
+             scope = "system",
+             system = "knb",
+             access = lter_access,
+             dataset = dataset)
+}
+
+```
+
+```{r write_eml}
+
+# write the eml to file
+write_eml(eml, paste0(packageIdent, ".xml"))
+```
+
+```{r preview_data_file_to_upload}
+
+# preview data set files that will be uploaded to S3
+list.files(pattern = paste0(projectid, "_"))
+```
+
+```{r upload_data_S3}
+
+# upload files to S3
+lapply(list.files(pattern = paste0(projectid, "_")), dataToAmz)
+```
+
+```{r clean_up}
+
+# remove data files
+dataFilesToRemove <- dir(pattern = paste0(projectid, "_"))
+file.remove(dataFilesToRemove)
+
+# EML to S3
+if(length(list.files(pattern = "*.xml")) == 1) {
+  emlToAmz(list.files(pattern = "*.xml")) } else {
+    print("more than one xml file found")
+  }
+
+# EML to cap-data-eml and remove file from project
+tryCatch({
+  
+  if(length(list.files(pattern = "*.xml")) == 1) {
+    file.copy(list.files(pattern = "*.xml"), "/home/srearl/localRepos/cap-metadata/cap-data-eml/")
+    file.remove(list.files(pattern = "*.xml")) } else {
+      print("more than one xml file found")
+    }
+},
+warning = function(warn) {
+  print(paste("WARNING: ", warn))
+},
+error = function(err) {
+  print(paste("ERROR: ", err))
+  
+}) # close try catch
+```
