@@ -24,10 +24,10 @@
 # instead of separate tables), and a new upload script(s) to match the new
 # structure created.
 
+
 # libraries ---------------------------------------------------------------
 
 library(tidyverse)
-library(purrr)
 library(RPostgreSQL)
 
 
@@ -46,36 +46,61 @@ pg <- pg_local
 analyses_metadata <- dbGetQuery(pg, "SELECT * FROM lter120.variables;")
 
 
-# new data ----------------------------------------------------------------
+# identify data files -----------------------------------------------------
 
-newdata <- read_csv('~/Desktop/LDP_050218.dat', skip = 1) %>% 
-  slice(-c(1:2)) %>% 
-  set_names(tolower(names(.)))
+dataFiles <- list.files(path = '~/Desktop/Loggernet_downloads/',
+                        pattern = 'dbg',
+                        recursive = FALSE,
+                        full.names = TRUE,
+                        ignore.case = TRUE)
 
-newdata <- newdata %>% 
-  mutate(
-    timestamp = as.POSIXct(timestamp, format = "%Y-%m-%d %H:%M:%S"),
-    airtc_avg = as.numeric(airtc_avg),
-    rh = as.numeric(rh),
-    slrkw_avg = as.numeric(slrkw_avg),
-    slrmj_tot = as.numeric(slrmj_tot),
-    ws_ms_avg = as.numeric(ws_ms_avg),
-    winddir = as.numeric(winddir),
-    rain_mm_tot = as.numeric(rain_mm_tot)
-  )
+dataFiles <- list.files(path = '~/Desktop/Loggernet_downloads/',
+                        pattern = 'ldp',
+                        recursive = FALSE,
+                        full.names = TRUE,
+                        ignore.case = TRUE)
+
+
+# harvest data ------------------------------------------------------------
+
+harvest_tower_data <- function(datafile) {
+  
+  newdata <- read_csv(datafile, skip = 1) %>% 
+    slice(-c(1:2)) %>% 
+    set_names(tolower(names(.)))
+  
+  newdata <- newdata %>% 
+    mutate(
+      timestamp = as.POSIXct(timestamp, format = "%Y-%m-%d %H:%M:%S"),
+      airtc_avg = as.numeric(airtc_avg),
+      rh = as.numeric(rh),
+      slrkw_avg = as.numeric(slrkw_avg),
+      slrmj_tot = as.numeric(slrmj_tot),
+      ws_ms_avg = as.numeric(ws_ms_avg),
+      winddir = as.numeric(winddir),
+      rain_mm_tot = as.numeric(rain_mm_tot)
+    )
+  
+  return(newdata)
+}
+
+towerDataList <- map(.x = dataFiles,
+                     .f = harvest_tower_data)
+
+towerDataBound <- bind_rows(towerDataList)
 
 
 # quality control ---------------------------------------------------------
 
 # check to see if there are any duplicates
-nrow(newdata %>% group_by(timestamp) %>% filter(n() > 1))
+nrow(towerDataBound %>% group_by(timestamp) %>% filter(n() > 1))
 
 # if so, what to do, purge them?
 # newdata %>% distinct(TIMESTAMP, .keep_all = T) # purge duplicates
 
 # have a quick look at the data
 
-newdata %>% 
+towerDataBound %>% 
   select(-timestamp, -record) %>% 
   gather(key = analyte, value = value) %>% 
   mutate(value = replace(value, value == 'NAN', NA)) %>% 
@@ -86,11 +111,11 @@ newdata %>%
     max = max(value, na.rm = T)
   )
 
-newdata %>% 
+towerDataBound %>% 
   ggplot(aes(x = timestamp, y = rain_mm_tot)) +
   geom_point()
 
-newdata %>% 
+towerDataBound %>% 
   ggplot(aes(x = timestamp, y = airtc_avg)) +
   geom_point()
 
@@ -98,22 +123,22 @@ newdata %>%
 # write to temporary table ------------------------------------------------
 
 if (dbExistsTable(pg, c('lter120', 'temp_data_table'))) dbRemoveTable(pg, c('lter120', 'temp_data_table')) # make sure tbl does not exist
-dbWriteTable(pg, c('lter120', 'temp_data_table'), value = newdata, row.names = F)
+dbWriteTable(pg, c('lter120', 'temp_data_table'), value = towerDataBound, row.names = F)
 
 dbExecute(pg, '
           ALTER TABLE lter120.temp_data_table
             ALTER COLUMN "timestamp" TYPE timestamp without time zone USING "timestamp"::timestamp without time zone,
             ALTER COLUMN record TYPE numeric USING record::numeric;')
 
-            # changed workflow such that most column types are changed to numeric in R above
+# changed workflow such that most column types are changed to numeric in R above
 
-            # ALTER COLUMN airtc_avg TYPE numeric USING airtc_avg::numeric,
-            # ALTER COLUMN rh TYPE numeric USING rh::numeric,
-            # ALTER COLUMN slrkw_avg TYPE numeric USING slrkw_avg::numeric,
-            # ALTER COLUMN slrmj_tot TYPE numeric USING slrmj_tot::numeric, 
-            # ALTER COLUMN ws_ms_avg TYPE numeric USING ws_ms_avg::numeric,
-            # ALTER COLUMN winddir TYPE numeric USING winddir::numeric,
-            # ALTER COLUMN rain_mm_tot TYPE numeric USING rain_mm_tot::numeric;')
+# ALTER COLUMN airtc_avg TYPE numeric USING airtc_avg::numeric,
+# ALTER COLUMN rh TYPE numeric USING rh::numeric,
+# ALTER COLUMN slrkw_avg TYPE numeric USING slrkw_avg::numeric,
+# ALTER COLUMN slrmj_tot TYPE numeric USING slrmj_tot::numeric, 
+# ALTER COLUMN ws_ms_avg TYPE numeric USING ws_ms_avg::numeric,
+# ALTER COLUMN winddir TYPE numeric USING winddir::numeric,
+# ALTER COLUMN rain_mm_tot TYPE numeric USING rain_mm_tot::numeric;')
 
 
 # LDP insert --------------------------------------------------------------
