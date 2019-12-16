@@ -211,14 +211,6 @@ ldpGeo <- EML::eml$geographicCoverage(
   id = "geographicCoverage.LDP"
 )
 
-# ldpGeo <- EML::eml$geographicCoverage(
-#   geographicDescription = "CAP LTER site at Lost Dutchman State Park",
-#   boundingCoordinates = ldpCoords,
-#   id = "geographicCoverage.LDP"
-# )
-# 
-# ldpGeo$boundingCoordinates <- ldpCoords
-
 # DGB geographic
 
 dbgCoords <- EML::eml$boundingCoordinates(
