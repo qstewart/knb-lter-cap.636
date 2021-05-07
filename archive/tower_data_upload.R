@@ -33,8 +33,8 @@ library(RPostgreSQL)
 
 # connections -------------------------------------------------------------
 
-source('~/Documents/localSettings/pg_prod.R')
-source('~/Documents/localSettings/pg_local.R')
+source("~/Documents/localSettings/pg_prod.R")
+source("~/Documents/localSettings/pg_local.R")
 
 pg <- pg_prod
 pg <- pg_local
@@ -48,30 +48,69 @@ analyses_metadata <- dbGetQuery(pg, "SELECT * FROM lter120.variables;")
 
 # identify data files -----------------------------------------------------
 
-dataFiles <- list.files(path = '~/Desktop/Loggernet_downloads/',
-                        pattern = 'dbg',
-                        recursive = FALSE,
-                        full.names = TRUE,
-                        ignore.case = TRUE)
+dataFiles <- list.files(
+  path = "~/Dropbox/DBG",
+  pattern = "dbg",
+  recursive = FALSE,
+  full.names = TRUE,
+  ignore.case = TRUE
+)
 
-dataFiles <- list.files(path = '~/Desktop/Loggernet_downloads/',
-                        pattern = 'ldp',
-                        recursive = FALSE,
-                        full.names = TRUE,
-                        ignore.case = TRUE)
+dataFiles <- list.files(
+  path = "~/Desktop/Loggernet_downloads/",
+  pattern = "ldp",
+  recursive = FALSE,
+  full.names = TRUE,
+  ignore.case = TRUE
+)
 
 
 # harvest data ------------------------------------------------------------
 
-harvest_tower_data <- function(datafile) {
-  
-  newdata <- read_csv(datafile, skip = 1) %>% 
-    slice(-c(1:2)) %>% 
+harvest_tower_data <- function(datafile, files_sites_processed) {
+
+  header <- readLines(datafile, n = 1)
+
+  if (grepl("LDP", header, ignore.case = TRUE)) {
+
+    this_site <- 2
+
+    message(
+      paste0("processed file: ", basename(datafile), "; site: LDP")
+    )
+
+  } else if (grepl("DBG", header, ignore.case = TRUE)) {
+
+    this_site <- 1
+
+    message(
+      paste0("processed file: ", basename(datafile), "; site: DBG")
+    )
+
+  } else {
+
+    this_site <- NA_integer_
+
+    warning(
+      paste0("could not determine site for file: ", basename(datafile))
+    )
+
+  }
+
+  newdata <- suppressMessages(
+    read_csv(
+      file = datafile,
+      skip = 1
+      ) %>%
+    slice(-c(1:2)) %>%
     set_names(tolower(names(.)))
-  
-  newdata <- newdata %>% 
+  )
+
+  newdata <- newdata %>%
     mutate(
+      site = this_site,
       timestamp = as.POSIXct(timestamp, format = "%Y-%m-%d %H:%M:%S"),
+      filename = basename(datafile),
       airtc_avg = as.numeric(airtc_avg),
       rh = as.numeric(rh),
       slrkw_avg = as.numeric(slrkw_avg),
@@ -80,20 +119,29 @@ harvest_tower_data <- function(datafile) {
       winddir = as.numeric(winddir),
       rain_mm_tot = as.numeric(rain_mm_tot)
     )
-  
+
   return(newdata)
+
 }
 
-towerDataList <- map(.x = dataFiles,
-                     .f = harvest_tower_data)
+# towerDataList <- map(.x = dataFiles,
+#                      .f = harvest_tower_data)
+# 
+# towerDataBound <- bind_rows(towerDataList)
 
-towerDataBound <- bind_rows(towerDataList)
+tower_data <- map_df(
+  .x = dataFiles,
+  .f = harvest_tower_data
+)
 
 
 # quality control ---------------------------------------------------------
 
 # check to see if there are any duplicates
-nrow(towerDataBound %>% group_by(timestamp) %>% filter(n() > 1))
+tower_data %>% count(timestamp) %>% arrange(desc(n))
+tower_data %>% filter(timestamp == "2019-12-02 22:20:00")
+
+nrow(tower_data %>% count(timestamp) %>% filter(n() > 1))
 
 # if so, what to do, purge them?
 # newdata %>% distinct(TIMESTAMP, .keep_all = T) # purge duplicates

@@ -1,10 +1,9 @@
-# knb-lter-cap.636
-## CAP LTER 10m towers at Lost Dutchman State Park and the Desert Botanical Garden
+## knb-lter-cap.636
 
-This repository contains the R code for publishing the 10m tower data.
+### CAP LTER 10-m towers at Lost Dutchman State Park and the Desert Botanical Garden
 
-In Jan 2018, the repository was expanded to include an R workflow for uploading tower data to the database after the Ruby script(s) that had served this purpose were no longer functional (or, at least, practical). Note that the workflow adds data to the database in its current configuration, which is as a wide format and includes separate tables for LDP and DBG data. This needs to be rectified in the future such that the DB structure is a more appropriate long format, and the upload scripts will have to be modified accordingly. 
+This repository features the workflow for publishing the 10-m tower data, documentation relating to tower equipment and operation, and a log of equipment maintenance (mostly sensor calibration or replacement).
 
-The repository also now houses, for posterity, the tower operating manual and loggernet programs that are, as much as I am aware, the programs currently employed in the towers. The previous repository that housed the upload functionality (ssh://git.aws.gios.asu.edu/common/git/lter120tower-ruby), was an archive for raw data downloads, and housed the loggernet programs, operations manual, etc. is generally deprecated (but still exists in case information not copied over is ever needed).
-
-Raw data download are now house in Dropbox (ASU::Loggernet downloads).
+- data processing and upload: the workflow for processing and uploading tower data to the database has been moved from this repository to the [capmicromet](https://gitlab.com/caplter/capmicromet) R package.
+- database details are in the [capmicromet-database](https://gitlab.com/caplter/capmicromet-database) repository
+- CAP LTER technicians should please annotate the `maintenance_log.csv` file in this repository with all maintenance activities relating to this project
