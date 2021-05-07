@@ -1,0 +1,35 @@
+|
+  date:
+    attributeName: date
+    attributeDefinition: 'date of action'
+    columnClasses: Date
+    formatString: YYYY-MM-DD
+  site_code:
+    attributeName: site_code
+    attributeDefinition: 'study location'
+    columnClasses: factor
+  sensor:
+    attributeName: sensor
+    attributeDefinition: 'sensor that was addressed'
+    columnClasses: character
+    definition: ''
+  serial_number:
+    attributeName: serial_number
+    attributeDefinition: 'serial number of sensor that was addressed'
+    columnClasses: character
+    definition: ''
+  calibrated:
+    attributeName: calibrated
+    attributeDefinition: 'date of calibration'
+    columnClasses: Date
+    formatString: YYYY-MM-DD
+  action:
+    attributeName: action
+    attributeDefinition: 'type of maintenance addressed'
+    columnClasses: character
+    definition: ''
+  note:
+    attributeName: note
+    attributeDefinition: 'notes regarding maintenance action'
+    columnClasses: character
+    definition: ''

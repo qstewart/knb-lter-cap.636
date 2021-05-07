@@ -1,275 +1,307 @@
 ---
-title: "remlTemplate"
-author: "SRE"
-date: "March 14, 2018"
+title: "capeml template"
+author: "information manager"
+date: Sys.Date()
 output: html_document
 editor_options: 
   chunk_output_type: console
 ---
 
-# 2018-12-16 (knb-lter-cap.636.6)
-
-* functionalized tower_data_upload.R
-* remove formatting from methods
-* reconstruct coverage to rOpenSci EML v2
-
-
-# 2018-06-05 (knb-lter-cap.636.5)
-
-Workflow moved to Rmd for the 2018-06-05 update.
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-```{r eml-2.1.1, include=FALSE}
-emld::eml_version("eml-2.2.0")
-# options("emld_db" = "eml-2.1.1")
-# emld::eml_version("eml-2.1.1")
-```
+# libraries
 
 ```{r libraries}
-library(EML)
-library(RPostgreSQL)
-library(RMySQL)
 library(tidyverse)
-library(tools)
-library(readxl)
-library(aws.s3)
 library(capeml)
 library(gioseml)
 ```
 
-```{r dataset_details}
-projectid <- 636
-packageIdent <- 'knb-lter-cap.636.6'
-pubDate <- as.character(Sys.Date())
-```
- 
-```{r helper_functions}
-source('~/localRepos/reml-helper-tools/amazon_file_upload.R')
-```
+# micromet_data
 
-```{r connections::amazon}
-source('~/Documents/localSettings/aws.s3')
-```
+```{r micromet-data, eval=TRUE, warning=FALSE}
 
-```{r connections::postgres::local, eval=FALSE}
-source('~/Documents/localSettings/pg_local.R')
-pg <- pg_local
-```
+micromet_data <- dbGetQuery(pg, "
+  SELECT
+    events.timestamp,
+    sites.site_code,
+    -- events.site_id,
+    events.replicate,
+    variables.variablecode,
+    observations.reading
+  FROM micromet.events
+  JOIN micromet.observations ON (observations.event_id = events.id)
+  JOIN micromet.variables ON (variables.id = observations.variable_id)
+  JOIN micromet.sites ON (sites.id = events.site_id) ;
+  ")
 
-```{r connections::postgres::prod, eval=T }
-source('~/Documents/localSettings/pg_prod.R')
-pg <- pg_prod
-```
+  micromet_data <- micromet_data %>%
+    tidyr::pivot_wider(
+      names_from = variablecode,
+      values_from = reading
+      ) %>%
+  mutate(
+    site_code = as.factor(site_code)
+    ) %>%
+  rlang::set_names(tolower(names(.)))
 
-```{r connections::mysql::prod, eval=T }
-source('~/Documents/localSettings/mysql_prod.R')
-mysql_prod <- mysql_prod_connect()
-```
+try({
+  write_attributes(micromet_data)
+  write_factors(micromet_data)
+})
 
-# CAREFUL WITH ATTRS - AT THE TIME OF THIS WRITING, MULTIPLE MISSING VALUE CODES ARE NOT SUPPORTED FROM THE TEMPLATE, SO NAs and NaNs NEED TO BE ADDRESSED BY HAND (AS DO NAs GENERALLY EVEN WHEN ALONE)
+micromet_data_desc <- "Micrometeorological data from the CAP LTER weather stations located at the Desert Botanical Garden and Lost Dutchman State Park, AZ, USA sites. Data are 10-min averages of measurments collected at 5-second intervals."
 
-```{r LDP}
-
-tower_data_ldp <- dbGetQuery(pg,
-'SELECT
-  "timestamp",
-  airtc_avg,
-  rh, slrkw_avg,
-  slrmj_tot,
-  ws_ms_avg,
-  wind_dir,
-  rain_mm_tot
-FROM lter120.ldp_data;')
-
-tower_data_ldp <- tower_data_ldp %>%
-  mutate(site_code = "Lost Dutchman State Park (LDP)") %>%
-  select(site_code, timestamp:rain_mm_tot) %>%
-  arrange(timestamp)
-
-write_attributes(tower_data_ldp)
-# write_factors(tower_data_ldp) # factors not present
-
-tower_data_ldp_desc <- 'Micrometeoroligical data from the CAP LTER weather station located at the Lost Dutchman State Park, AZ. Data are 10-min averages of measurments collected at 5-second intervals.'
-
-tower_data_ldp_DT <- create_dataTable(dfname = tower_data_ldp,
-                                      description = tower_data_ldp_desc,
-                                      dateRangeField = 'timestamp')
+micromet_data_DT <- create_dataTable(
+  dfname = micromet_data,
+  description = micromet_data_desc,
+  dateRangeField = "timestamp"
+)
 
 ```
 
-# CAREFUL WITH ATTRS - AT THE TIME OF THIS WRITING, MULTIPLE MISSING VALUE CODES ARE NOT SUPPORTED FROM THE TEMPLATE, SO NAs and NaNs NEED TO BE ADDRESSED BY HAND (AS DO NAs GENERALLY EVEN WHEN ALONE)
+# micromet_program_DBG
 
-```{r DBG}
+```{r micromet-program-DBG, eval=TRUE}
 
-tower_data_dbg <- dbGetQuery(pg,
-'SELECT
-  "timestamp",
-  airtc_avg,
-  rh, slrkw_avg,
-  slrmj_tot,
-  ws_ms_avg,
-  wind_dir,
-  rain_mm_tot
-FROM lter120.dbg_data;')
+micromet_program_DBG_desc <- "data logger and sensor control program for Campbell data logger at the CAP LTER Desert Botanical Garden site"
+micromet_program_DBG_additional <- "developed with Campbell Loggernet software"
 
-tower_data_dbg <- tower_data_dbg %>%
-  mutate(site_code = "Desert Botanical Garden (DBG)") %>%
-  select(site_code, timestamp:rain_mm_tot) %>% 
-  arrange(timestamp)
-
-write_attributes(tower_data_dbg)
-# write_factors(tower_data_dbg) # factors not present
-
-tower_data_dbg_desc <- "Micrometeoroligical data from the CAP LTER weather station located near the Desert Botanical Garden in Papago Park, AZ. Data are 10-min averages of measurments collected at 5-second intervals."
-
-tower_data_dbg_DT <- create_dataTable(dfname = tower_data_dbg,
-                                      description = tower_data_dbg_desc,
-                                      dateRangeField = 'timestamp')
+micromet_program_DBG_OE <- create_otherEntity(
+  target_file_or_directory = "tower_operation/CNDep_DBG_MetTower.CR1",
+  description = micromet_program_DBG_desc,
+  additional_information = micromet_program_DBG_additional
+)
 
 ```
 
-```{r title}
+# micromet_program_LDP
 
-title <- 'CAP LTER weather stations at Papago Park and Lost Dutchman State Park in the greater Phoenix metropolitan area, ongoing since 2010'
+```{r micromet-program-LDP, eval=TRUE}
+
+micromet_program_LDP_desc <- "data logger and sensor control program for Campbell data logger at the CAP LTER Lost Dutchman Park site"
+micromet_program_LDP_additional <- "developed with Campbell Loggernet software"
+
+micromet_program_LDP_OE <- create_otherEntity(
+  target_file_or_directory = "tower_operation/CNDep_LDP_MetTower.CR1",
+  description = micromet_program_LDP_desc,
+  additional_information = micromet_program_LDP_additional
+)
+
 ```
 
-```{r abstract}
+# maintenance_log
 
-abstract <- set_TextType("abstract.md")
+```{r maintenance-log, eval=TRUE, error=TRUE}
+
+maintenance_log <- read_csv("maintenance_log.csv") %>%
+  rename(site_code = site) %>%
+  mutate(site_code = as.factor(site_code))
+
+try({
+  write_attributes(maintenance_log, overwrite = FALSE)
+  write_factors(maintenance_log, overwrite = FALSE)
+})
+
+maintenance_log_desc <- "log of maintenance activity, especially sensor calibration and replacement, at the CAP LTER micromet towers"
+
+maintenance_log_DT <- create_dataTable(
+  dfname = maintenance_log,
+  description = maintenance_log_desc,
+  dateRangeField = "date"
+)
+
 ```
 
-```{r connections::mysql::prod redux, eval=T }
-source('~/Documents/localSettings/mysql_prod.R')
-mysql_prod <- mysql_prod_connect()
-```
+
+# people
+
+See the gioseml package for examples of creating people resources from scratch.
 
 ```{r people}
 
+# creator(s) - required
 
-jonAllen <- create_role(firstName = 'jon', lastName = 'allen', roleType = 'creator')
-nancyGrimm <- create_role(firstName = 'n', lastName = 'grimm', roleType = 'creator')
-sharonHall <- create_role(firstName = 'shar', lastName = 'hall', roleType = 'creator')
-jasonKaye <- create_role(firstName = 'jaso', lastName = 'kaye', roleType = 'creator')
-dan <- create_role(firstName = 'dan', lastName = 'child', roleType = 'creator')
+jonAllen <- create_role(
+  firstName = "jon",
+  lastName = "allen",
+  roleType = "creator"
+)
+
+nancyGrimm <- create_role(
+  firstName = "n",
+  lastName = "grimm",
+  roleType = "creator"
+)
+
+sharonHall <- create_role(
+  firstName = "shar",
+  lastName = "hall",
+  roleType = "creator"
+)
+
+jasonKaye <- create_role(
+  firstName = "jaso",
+  lastName = "kaye",
+  roleType = "creator"
+)
 
 creators <- list(
   nancyGrimm,
   sharonHall,
   jasonKaye,
-  jonAllen,
-  dan
+  jonAllen
 )
 
-stevanEarl <- create_role(firstName = 's', lastName = 'earl', roleType = "metadata")
-quincyStewart <- create_role(firstName = 'q', lastName = 'stewart', roleType = "metadata")
-sallyWittlinger <- create_role(firstName = 's', lastName = 'wittlinger', roleType = "metadata")
-kristinGodbeer <- create_role(firstName = 'k', lastName = 'godbeer', roleType = "metadata")
+# metadata provider - required
 
-metadataProvider <- list(stevanEarl,
-                         quincyStewart,
-                         sallyWittlinger,
-                         kristinGodbeer)
+stevanEarl <- create_role(
+  firstName = "s",
+  lastName = "earl",
+  roleType = "metadata"
+)
+
+quincyStewart <- create_role(
+  firstName = "q",
+  lastName = "stewart",
+  roleType = "metadata"
+)
+
+sallyWittlinger <- create_role(
+  firstName = "s",
+  lastName = "wittlinger",
+  roleType = "metadata"
+)
+
+kristinGodbeer <- create_role(
+  firstName = "k",
+  lastName = "godbeer",
+  roleType = "metadata"
+)
+
+metadataProvider <- list(
+  stevanEarl,
+  quincyStewart,
+  sallyWittlinger,
+  kristinGodbeer
+)
+
 ```
+
+
+# keywords
 
 ```{r keywords}
 
-# CAP IRTs for reference (be sure to include these as appropriate):
-# https://sustainability.asu.edu/caplter/research/
-
 write_keywords()
-keywords <- create_keywordSet('keywords.csv')
-
 ```
 
-```{r methods}
 
-methods <- set_methods("methods.md")
-```
+# methods
+
+Methods are automatically read from a `methods.md` file in the project
+directory. If more elaborate methods are required, e.g., to incorporate
+provenance, use the enhancedMethods approach.
+
+
+# coverages
 
 ```{r coverages}
 
-# begin date will never change, but pull max date from data
-ldp_max_date <- dbGetQuery(pg, "SELECT MAX(timestamp) AS date FROM lter120.ldp_data;")
-dbg_max_date <- dbGetQuery(pg, "SELECT MAX(timestamp) AS date FROM lter120.dbg_data;")
-enddate <- max(ldp_max_date$date, dbg_max_date$date) 
-enddate <- as.character(enddate, format = "%Y-%m-%d")
-
 # LDP geographic
 
-ldpCoords <- EML::eml$boundingCoordinates(
+ldp_coords <- EML::eml$boundingCoordinates(
   westBoundingCoordinate = "-111.4795",
   eastBoundingCoordinate = "-111.4789",
   northBoundingCoordinate = "33.4626",
-  southBoundingCoordinate = "33.4622")
+  southBoundingCoordinate = "33.4622"
+)
 
-ldpGeo <- EML::eml$geographicCoverage(
-  geographicDescription = "CAP LTER site at Lost Dutchman State Park",
-  boundingCoordinates = ldpCoords,
+ldp_geo <- EML::eml$geographicCoverage(
+  geographicDescription = "CAP LTER site at Lost Dutchman State Park, AZ, USA",
+  boundingCoordinates = ldp_coords,
   id = "geographicCoverage.LDP"
 )
 
 # DGB geographic
 
-dbgCoords <- EML::eml$boundingCoordinates(
+dbg_coords <- EML::eml$boundingCoordinates(
   westBoundingCoordinate = "-111.9476",
   eastBoundingCoordinate = "-111.9415",
   northBoundingCoordinate = "33.4612",
-  southBoundingCoordinate = "33.4554")
+  southBoundingCoordinate = "33.4554"
+)
 
-dbgGeo <- EML::eml$geographicCoverage(
-  geographicDescription = "CAP LTER site at the Desert Botanical Garden",
-  boundingCoordinates = dbgCoords,
-  id = "geographicCoverage.DBG")
+# geographic
 
-# dbgGeo$boundingCoordinates <- dbgCoords
+dbg_geo <- EML::eml$geographicCoverage(
+  geographicDescription = "CAP LTER site at the Desert Botanical Garden, AZ, USA",
+  boundingCoordinates = dbg_coords,
+  id = "geographicCoverage.DBG"
+)
 
-towerBegin <- EML::eml$beginDate(calendarDate = "2006-05-10")
-towerEnd <- EML::eml$endDate(calendarDate = enddate)
-towerRange <- EML::eml$rangeOfDates(beginDate = towerBegin, endDate = towerEnd)
-towerTemporal <- EML::eml$temporalCoverage(rangeOfDates = towerRange)
+# temporal
 
+end_date <- dbGetQuery(pg, "SELECT MAX(timestamp) FROM micromet.events ; ")
+end_date <- as.character(end_date, format = "%Y-%m-%d")
+
+tower_begin <- EML::eml$beginDate(calendarDate = "2006-05-10")
+tower_end <- EML::eml$endDate(calendarDate = end_date)
+
+tower_range <- EML::eml$rangeOfDates(
+  beginDate = tower_begin,
+  endDate = tower_end
+)
+tower_temporal <- EML::eml$temporalCoverage(rangeOfDates = tower_range)
+
+# coverage
 coverage <- EML::eml$coverage(
-  geographicCoverage = list(ldpGeo, dbgGeo),
-  temporalCoverage = towerTemporal 
+  geographicCoverage = list(
+    ldp_geo,
+    dbg_geo),
+  temporalCoverage = tower_temporal
 )
 
 ```
 
-```{r construct-dataset}
+# custom units
 
-# from capeml package:
-# address
-# publisher
-# contact
-# rights
-# distribution
+```{r custom-units, eval=TRUE}
 
-# DATASET
-dataset <- EML::eml$dataset(
-  title = title,
-  creator = creators,
-  pubDate = pubDate,
-  metadataProvider = metadataProvider,
-  intellectualRights = capRights,
-  abstract = abstract,
-  keywordSet = keywords,
-  coverage = coverage,
-  contact = capContact, # cap contact
-  publisher = capPublisher, # cap pub
-  # contact = giosContact, # gios contact
-  # publisher = giosPublisher, # gios pub
-  methods = methods,
-  project = capProject, # cap project
-  distribution = create_distribution(packageIdent))
+custom_units <- rbind(
+  data.frame(
+    id = "kilowattPerMeterSquared",
+    unitType = "irradiance",
+    parentSI = "wattPerMeterSquared",
+    multiplierToSI = "1000",
+    description = "average amount of energy per square meter of surface during the observation period"
+    ),
+  data.frame(
+    id = "megajoulePerMeterSquared",
+    parentSI = "joulePerMeterSquared",
+    unitType = "irradiance",
+    multiplierToSI = "1000000",
+    description = "total amount of energy per square meter of surface during the observation period")
+)
 
-# add associatedParty if relevant
-# dataset$associatedParty <- list() 
+unitList <- EML::set_unitList(
+  custom_units,
+  as_metadata = TRUE
+)
 
 ```
 
+
+# dataset
+
+Optionally, provide: scope, abstract, methods, keywords, publication date.
+Projects scopes include lter (default), gios, urex, ltreb, and som.
+
+```{r construct-dataset}
+
+dataset <- create_dataset()
+```
+
+
+# add dataTable
 
 ```{r dataSet$dataTable}
 
@@ -278,103 +310,121 @@ dataset <- EML::eml$dataset(
 print(ls(pattern = "_DT"))
 
 if (length(ls(pattern = "_DT")) > 0) {
-  
+
   listOfDataTables <- lapply(ls(pattern = "_DT"), function(DT) { get(DT) } )
-  
-  dataset$dataTable  <- listOfDataTables  
-  
-}
-```
 
-```{r custom_units, eval=FALSE}
+  dataset$dataTable  <- listOfDataTables
 
-custom_units <- rbind(
-  data.frame(id = "kilowattPerMeterSquared",
-             unitType = "irradiance",
-             parentSI = "wattPerMeterSquared",
-             multiplierToSI = "1000",
-             description = "average amount of energy per square meter of surface during the observation period"),
-  data.frame(id = "megajoulePerMeterSquared",
-             parentSI = "joulePerMeterSquared",
-             unitType = "irradiance",
-             multiplierToSI = "1000000",
-             description = "total amount of energy per square meter of surface during the observation period"))
-
-unitList <- set_unitList(custom_units,
-                         as_metadata = TRUE)
-
-```
-
-```{r construct_eml, eval=TRUE}
-
-if(exists('unitList')) {
-  
-  eml <- EML::eml$eml(
-    access = lterAccess,
-    dataset = dataset,
-    additionalMetadata = unitList,
-    packageId = packageIdent,
-    system = "knb",
-    scope = "system"
-  )
-  
-} else {
-  
-  eml <- EML::eml$eml(
-    access = lterAccess,
-    dataset = dataset,
-    packageId = packageIdent,
-    system = "knb",
-    scope = "system"
-  )
 }
 
+# or add manually
+# dataset$dataTable <- list(dataTableOne, dataTableTwo)
 ```
 
-```{r write_eml}
 
-# write the eml to file
-write_eml(eml, paste0(packageIdent, ".xml"))
+# add otherEntity
+
+```{r dataSet$otherEntity}
+
+# add other entities if relevant
+
+print(ls(pattern = "_OE"))
+
+if (length(ls(pattern = "_OE")) > 0) {
+
+  listOfOtherEntities <- lapply(ls(pattern = "_OE"), function(OE) { get(OE) } )
+
+  dataset$otherEntity <- listOfOtherEntities
+
+}
+
+# or add manually
+# dataset$otherEntity <- list(otherEntityOne, otherEntityTwo)
 ```
+
+# eml
+
+```{r construct-eml, eval=TRUE}
+
+eml <- capeml::create_eml()
+```
+
+```{r validate-eml, eval=TRUE}
+
+EML::eml_validate(eml)
+```
+
+```{r eml-to-file, eval=TRUE}
+
+capeml::write_cap_eml()
+```
+
+# file placement
+
+## package details
+
+```{r package-details, eval=TRUE}
+
+# retrieve package details from config.yaml
+
+if (!file.exists("config.yaml")) {
+  stop("config.yaml not found")
+}
+packageIdent <- yaml::yaml.load_file("config.yaml")$packageIdent
+packageNum <- yaml::yaml.load_file("config.yaml")$packageNum
+```
+
+## AWS settings
+
+```{r S3_helper_functions}
+
+# functions and setting for uploading to S3
+
+library(aws.s3)
+source("~/Documents/localSettings/aws.s3")
+```
+
+## upload data files
 
 ```{r preview_data_file_to_upload}
 
 # preview data set files that will be uploaded to S3
-list.files(pattern = paste0(projectid, "_"))
+list.files(pattern = paste0(packageNum, "_"), recursive = TRUE)
 ```
 
 ```{r upload_data_S3}
 
 # upload files to S3
-lapply(list.files(pattern = paste0(projectid, "_")), dataToAmz)
+
+lapply(list.files(pattern = paste0(packageNum, "_"), recursive = TRUE), data_to_amz)
 ```
 
-```{r clean_up}
+## copy and move XML as needed
 
-# remove data files
-dataFilesToRemove <- dir(pattern = paste0(projectid, "_"))
-file.remove(dataFilesToRemove)
+```{r duplicate_xml_as_needed}
 
-# EML to S3
-if(length(list.files(pattern = "*.xml")) == 1) {
-  emlToAmz(list.files(pattern = "*.xml")) } else {
-    print("more than one xml file found")
-  }
+# XML to S3
+eml_to_amz(list.files(pattern = paste0(packageIdent, ".xml")))
 
-# EML to cap-data-eml and remove file from project
-tryCatch({
-  
-  if(length(list.files(pattern = "*.xml")) == 1) {
-    file.copy(list.files(pattern = "*.xml"), "/home/srearl/localRepos/cap-metadata/cap-data-eml/")
-    file.remove(list.files(pattern = "*.xml")) } else {
-      print("more than one xml file found")
-    }
-},
-warning = function(warn) {
-  print(paste("WARNING: ", warn))
-},
-error = function(err) {
-  print(paste("ERROR: ", err))
-  
-}) # close try catch
+# XML to cap-data-eml
+file.copy(
+  from = list.files(pattern = paste0(packageIdent, ".xml")),
+  to = "/home/srearl/localRepos/cap-metadata/cap-data-eml/"
+)
+```
+
+## optionally delete data and xml files
+
+```{r optional: preview_files_to_delete}
+
+# preview files to delete
+dir(pattern = paste0(packageNum, "_"), recursive = TRUE)
+list.files(pattern = paste0(packageIdent, ".xml"), recursive = TRUE)
+```
+
+```{r optional: delete_files}
+
+# delete files
+file.remove(dir(pattern = paste0(packageNum, "_"), recursive = TRUE))
+file.remove(list.files(pattern = paste0(packageIdent, ".xml")), recursive = TRUE)
 ```
