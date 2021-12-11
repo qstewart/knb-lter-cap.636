@@ -7,19 +7,11 @@ editor_options:
   chunk_output_type: console
 ---
 
-# libraries
-
-```{r libraries}
-library(tidyverse)
-library(capeml)
-library(gioseml)
-```
-
 # micromet_data
 
 ```{r micromet-data, eval=TRUE, warning=FALSE}
 
-micromet_data <- dbGetQuery(pg, "
+micromet_data <- DBI::dbGetQuery(pg, "
   SELECT
     events.timestamp,
     sites.site_code,
@@ -33,28 +25,30 @@ micromet_data <- dbGetQuery(pg, "
   JOIN micromet.sites ON (sites.id = events.site_id) ;
   ")
 
-  micromet_data <- micromet_data %>%
-    tidyr::pivot_wider(
-      names_from = variablecode,
-      values_from = reading
-      ) %>%
-  mutate(
+  micromet_data <- micromet_data |>
+  tidyr::pivot_wider(
+    names_from  = variablecode,
+    values_from = reading
+    ) |>
+  dplyr::mutate(
     site_code = as.factor(site_code)
-    ) %>%
-  rlang::set_names(tolower(names(.)))
+  )
 
-try({
-  write_attributes(micromet_data)
-  write_factors(micromet_data)
-})
+  names(micromet_data) <- tolower(names(micromet_data))
 
-micromet_data_desc <- "Micrometeorological data from the CAP LTER weather stations located at the Desert Botanical Garden and Lost Dutchman State Park, AZ, USA sites. Data are 10-min averages of measurments collected at 5-second intervals."
+  try({
+    campeml::write_attributes(micromet_data, overwrite = FALSE)
+    campeml::write_factors(micromet_data, overwrite = FALSE)
+  })
 
-micromet_data_DT <- create_dataTable(
-  dfname = micromet_data,
-  description = micromet_data_desc,
-  dateRangeField = "timestamp"
-)
+  micromet_data_desc <- "Micrometeorological data from the CAP LTER weather stations located at the Desert Botanical Garden and Lost Dutchman State Park, AZ, USA sites. Data are 10-min averages of measurments collected at 5-second intervals."
+
+  micromet_data_DT <- capeml::create_dataTable(
+    dfname         = micromet_data,
+    description    = micromet_data_desc,
+    dateRangeField = "timestamp",
+    overwrite      = FALSE
+  )
 
 ```
 
@@ -62,13 +56,13 @@ micromet_data_DT <- create_dataTable(
 
 ```{r micromet-program-DBG, eval=TRUE}
 
-micromet_program_DBG_desc <- "data logger and sensor control program for Campbell data logger at the CAP LTER Desert Botanical Garden site"
+micromet_program_DBG_desc       <- "data logger and sensor control program for Campbell data logger at the CAP LTER Desert Botanical Garden site"
 micromet_program_DBG_additional <- "developed with Campbell Loggernet software"
 
-micromet_program_DBG_OE <- create_otherEntity(
+micromet_program_DBG_OE <- capeml::create_otherEntity(
   target_file_or_directory = "tower_operation/CNDep_DBG_MetTower.CR1",
-  description = micromet_program_DBG_desc,
-  additional_information = micromet_program_DBG_additional
+  description              = micromet_program_DBG_desc,
+  additional_information   = micromet_program_DBG_additional
 )
 
 ```
@@ -77,13 +71,13 @@ micromet_program_DBG_OE <- create_otherEntity(
 
 ```{r micromet-program-LDP, eval=TRUE}
 
-micromet_program_LDP_desc <- "data logger and sensor control program for Campbell data logger at the CAP LTER Lost Dutchman Park site"
+micromet_program_LDP_desc       <- "data logger and sensor control program for Campbell data logger at the CAP LTER Lost Dutchman Park site"
 micromet_program_LDP_additional <- "developed with Campbell Loggernet software"
 
-micromet_program_LDP_OE <- create_otherEntity(
+micromet_program_LDP_OE <- capeml::create_otherEntity(
   target_file_or_directory = "tower_operation/CNDep_LDP_MetTower.CR1",
-  description = micromet_program_LDP_desc,
-  additional_information = micromet_program_LDP_additional
+  description              = micromet_program_LDP_desc,
+  additional_information   = micromet_program_LDP_additional
 )
 
 ```
@@ -92,21 +86,22 @@ micromet_program_LDP_OE <- create_otherEntity(
 
 ```{r maintenance-log, eval=TRUE, error=TRUE}
 
-maintenance_log <- read_csv("maintenance_log.csv") %>%
-  rename(site_code = site) %>%
-  mutate(site_code = as.factor(site_code))
+maintenance_log <- readr::read_csv("maintenance_log.csv") |>
+  dplyr::rename(site_code = site) |>
+  dplyr::mutate(site_code = as.factor(site_code))
 
 try({
-  write_attributes(maintenance_log, overwrite = FALSE)
-  write_factors(maintenance_log, overwrite = FALSE)
+  capeml::write_attributes(maintenance_log, overwrite = FALSE)
+  capeml::write_factors(maintenance_log, overwrite = FALSE)
 })
 
 maintenance_log_desc <- "log of maintenance activity, especially sensor calibration and replacement, at the CAP LTER micromet towers"
 
-maintenance_log_DT <- create_dataTable(
-  dfname = maintenance_log,
-  description = maintenance_log_desc,
-  dateRangeField = "date"
+maintenance_log_DT <- capeml::create_dataTable(
+  dfname         = maintenance_log,
+  description    = maintenance_log_desc,
+  dateRangeField = "date",
+  projectNaming  = TRUE
 )
 
 ```
@@ -120,28 +115,28 @@ See the gioseml package for examples of creating people resources from scratch.
 
 # creator(s) - required
 
-jonAllen <- create_role(
+jonAllen <- gioseml::create_role(
   firstName = "jon",
-  lastName = "allen",
-  roleType = "creator"
+  lastName  = "allen",
+  roleType  = "creator"
 )
 
-nancyGrimm <- create_role(
+nancyGrimm <- gioseml::create_role(
   firstName = "n",
-  lastName = "grimm",
-  roleType = "creator"
+  lastName  = "grimm",
+  roleType  = "creator"
 )
 
-sharonHall <- create_role(
+sharonHall <- gioseml::create_role(
   firstName = "shar",
-  lastName = "hall",
-  roleType = "creator"
+  lastName  = "hall",
+  roleType  = "creator"
 )
 
-jasonKaye <- create_role(
+jasonKaye <- gioseml::create_role(
   firstName = "jaso",
-  lastName = "kaye",
-  roleType = "creator"
+  lastName  = "kaye",
+  roleType  = "creator"
 )
 
 creators <- list(
@@ -153,28 +148,28 @@ creators <- list(
 
 # metadata provider - required
 
-stevanEarl <- create_role(
+stevanEarl <- gioseml::create_role(
   firstName = "s",
-  lastName = "earl",
-  roleType = "metadata"
+  lastName  = "earl",
+  roleType  = "metadata"
 )
 
-quincyStewart <- create_role(
+quincyStewart <- gioseml::create_role(
   firstName = "q",
-  lastName = "stewart",
-  roleType = "metadata"
+  lastName  = "stewart",
+  roleType  = "metadata"
 )
 
-sallyWittlinger <- create_role(
+sallyWittlinger <- gioseml::create_role(
   firstName = "s",
-  lastName = "wittlinger",
-  roleType = "metadata"
+  lastName  = "wittlinger",
+  roleType  = "metadata"
 )
 
-kristinGodbeer <- create_role(
+kristinGodbeer <- gioseml::create_role(
   firstName = "k",
-  lastName = "godbeer",
-  roleType = "metadata"
+  lastName  = "godbeer",
+  roleType  = "metadata"
 )
 
 metadataProvider <- list(
@@ -209,23 +204,23 @@ provenance, use the enhancedMethods approach.
 # LDP geographic
 
 ldp_coords <- EML::eml$boundingCoordinates(
-  westBoundingCoordinate = "-111.4795",
-  eastBoundingCoordinate = "-111.4789",
+  westBoundingCoordinate  = "-111.4795",
+  eastBoundingCoordinate  = "-111.4789",
   northBoundingCoordinate = "33.4626",
   southBoundingCoordinate = "33.4622"
 )
 
 ldp_geo <- EML::eml$geographicCoverage(
   geographicDescription = "CAP LTER site at Lost Dutchman State Park, AZ, USA",
-  boundingCoordinates = ldp_coords,
-  id = "geographicCoverage.LDP"
+  boundingCoordinates   = ldp_coords,
+  id                    = "geographicCoverage.LDP"
 )
 
 # DGB geographic
 
 dbg_coords <- EML::eml$boundingCoordinates(
-  westBoundingCoordinate = "-111.9476",
-  eastBoundingCoordinate = "-111.9415",
+  westBoundingCoordinate  = "-111.9476",
+  eastBoundingCoordinate  = "-111.9415",
   northBoundingCoordinate = "33.4612",
   southBoundingCoordinate = "33.4554"
 )
@@ -234,8 +229,8 @@ dbg_coords <- EML::eml$boundingCoordinates(
 
 dbg_geo <- EML::eml$geographicCoverage(
   geographicDescription = "CAP LTER site at the Desert Botanical Garden, AZ, USA",
-  boundingCoordinates = dbg_coords,
-  id = "geographicCoverage.DBG"
+  boundingCoordinates   = dbg_coords,
+  id                    = "geographicCoverage.DBG"
 )
 
 # temporal
@@ -248,7 +243,7 @@ tower_end <- EML::eml$endDate(calendarDate = end_date)
 
 tower_range <- EML::eml$rangeOfDates(
   beginDate = tower_begin,
-  endDate = tower_end
+  endDate   = tower_end
 )
 tower_temporal <- EML::eml$temporalCoverage(rangeOfDates = tower_range)
 
@@ -256,7 +251,8 @@ tower_temporal <- EML::eml$temporalCoverage(rangeOfDates = tower_range)
 coverage <- EML::eml$coverage(
   geographicCoverage = list(
     ldp_geo,
-    dbg_geo),
+    dbg_geo
+    ),
   temporalCoverage = tower_temporal
 )
 
@@ -268,18 +264,18 @@ coverage <- EML::eml$coverage(
 
 custom_units <- rbind(
   data.frame(
-    id = "kilowattPerMeterSquared",
-    unitType = "irradiance",
-    parentSI = "wattPerMeterSquared",
+    id             = "kilowattPerMeterSquared",
+    unitType       = "irradiance",
+    parentSI       = "wattPerMeterSquared",
     multiplierToSI = "1000",
-    description = "average amount of energy per square meter of surface during the observation period"
+    description    = "average amount of energy per square meter of surface during the observation period"
     ),
   data.frame(
-    id = "megajoulePerMeterSquared",
-    parentSI = "joulePerMeterSquared",
-    unitType = "irradiance",
+    id             = "megajoulePerMeterSquared",
+    parentSI       = "joulePerMeterSquared",
+    unitType       = "irradiance",
     multiplierToSI = "1000000",
-    description = "total amount of energy per square meter of surface during the observation period")
+    description    = "total amount of energy per square meter of surface during the observation period")
 )
 
 unitList <- EML::set_unitList(
@@ -300,47 +296,6 @@ Projects scopes include lter (default), gios, urex, ltreb, and som.
 dataset <- create_dataset()
 ```
 
-
-# add dataTable
-
-```{r dataSet$dataTable}
-
-# add dataTables if relevant
-
-print(ls(pattern = "_DT"))
-
-if (length(ls(pattern = "_DT")) > 0) {
-
-  listOfDataTables <- lapply(ls(pattern = "_DT"), function(DT) { get(DT) } )
-
-  dataset$dataTable  <- listOfDataTables
-
-}
-
-# or add manually
-# dataset$dataTable <- list(dataTableOne, dataTableTwo)
-```
-
-
-# add otherEntity
-
-```{r dataSet$otherEntity}
-
-# add other entities if relevant
-
-print(ls(pattern = "_OE"))
-
-if (length(ls(pattern = "_OE")) > 0) {
-
-  listOfOtherEntities <- lapply(ls(pattern = "_OE"), function(OE) { get(OE) } )
-
-  dataset$otherEntity <- listOfOtherEntities
-
-}
-
-# or add manually
-# dataset$otherEntity <- list(otherEntityOne, otherEntityTwo)
-```
 
 # eml
 
@@ -371,7 +326,7 @@ if (!file.exists("config.yaml")) {
   stop("config.yaml not found")
 }
 packageIdent <- yaml::yaml.load_file("config.yaml")$packageIdent
-packageNum <- yaml::yaml.load_file("config.yaml")$packageNum
+packageNum   <- yaml::yaml.load_file("config.yaml")$packageNum
 ```
 
 ## AWS settings
@@ -396,7 +351,7 @@ list.files(pattern = paste0(packageNum, "_"), recursive = TRUE)
 
 # upload files to S3
 
-lapply(list.files(pattern = paste0(packageNum, "_"), recursive = TRUE), data_to_amz)
+lapply(list.files(pattern = paste0(packageNum, "_"), recursive = TRUE), gioseml::data_to_amz)
 ```
 
 ## copy and move XML as needed
@@ -404,7 +359,7 @@ lapply(list.files(pattern = paste0(packageNum, "_"), recursive = TRUE), data_to_
 ```{r duplicate_xml_as_needed}
 
 # XML to S3
-eml_to_amz(list.files(pattern = paste0(packageIdent, ".xml")))
+gioseml::eml_to_amz(list.files(pattern = paste0(packageIdent, ".xml")))
 
 # XML to cap-data-eml
 file.copy(
@@ -427,4 +382,35 @@ list.files(pattern = paste0(packageIdent, ".xml"), recursive = TRUE)
 # delete files
 file.remove(dir(pattern = paste0(packageNum, "_"), recursive = TRUE))
 file.remove(list.files(pattern = paste0(packageIdent, ".xml")), recursive = TRUE)
+```
+
+
+## EDI: evaluate
+
+```{r evaluate, eval=TRUE, echo=TRUE, message=TRUE}
+
+EDIutils::api_evaluate_data_package(
+  path        = getwd(),
+  package.id  = packageIdent,
+  environment = "production",
+  user.id     = "CAP",
+  user.pass   = keyring::key_get("EDI"),
+  affiliation = "EDI"
+)
+
+```
+
+## EDI: update
+
+```{r update, eval=TRUE, echo=TRUE, message=TRUE}
+
+EDIutils::api_update_data_package(
+  path        = getwd(),
+  package.id  = packageIdent,
+  environment = "production",
+  user.id     = "CAP",
+  user.pass   = keyring::key_get("EDI"),
+  affiliation = "EDI"
+)
+
 ```
