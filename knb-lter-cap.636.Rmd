@@ -36,23 +36,29 @@ micromet_data <- DBI::dbGetQuery(pg, "
 
   names(micromet_data) <- tolower(names(micromet_data))
 
-  try({
-    campeml::write_attributes(micromet_data, overwrite = FALSE)
-    campeml::write_factors(micromet_data, overwrite = FALSE)
-  })
+```
 
-  micromet_data_desc <- "Micrometeorological data from the CAP LTER weather stations located at the Desert Botanical Garden and Lost Dutchman State Park, AZ, USA sites. Data are 10-min averages of measurments collected at 5-second intervals."
+# DT::micromet_data
 
-  micromet_data_DT <- capeml::create_dataTable(
-    dfname         = micromet_data,
-    description    = micromet_data_desc,
-    dateRangeField = "timestamp",
-    overwrite      = FALSE
-  )
+```{r micromet-data, eval=TRUE, warning=FALSE}
+
+try({
+  capeml::write_attributes(micromet_data, overwrite = FALSE)
+  capeml::write_factors(micromet_data, overwrite = FALSE)
+})
+
+micromet_data_desc <- "Micrometeorological data from the CAP LTER weather stations located at the Desert Botanical Garden and Lost Dutchman State Park, AZ, USA sites. Data are 10-min averages of measurements collected at 5-second intervals."
+
+micromet_data_DT <- capeml::create_dataTable(
+  dfname         = micromet_data,
+  description    = micromet_data_desc,
+  dateRangeField = "timestamp",
+  overwrite      = FALSE
+)
 
 ```
 
-# micromet_program_DBG
+# OE::micromet_program_DBG
 
 ```{r micromet-program-DBG, eval=TRUE}
 
@@ -67,7 +73,7 @@ micromet_program_DBG_OE <- capeml::create_otherEntity(
 
 ```
 
-# micromet_program_LDP
+# OE::micromet_program_LDP
 
 ```{r micromet-program-LDP, eval=TRUE}
 
@@ -82,7 +88,7 @@ micromet_program_LDP_OE <- capeml::create_otherEntity(
 
 ```
 
-# maintenance_log
+# DT::maintenance_log
 
 ```{r maintenance-log, eval=TRUE, error=TRUE}
 
@@ -235,11 +241,10 @@ dbg_geo <- EML::eml$geographicCoverage(
 
 # temporal
 
-end_date <- dbGetQuery(pg, "SELECT MAX(timestamp) FROM micromet.events ; ")
-end_date <- as.character(end_date, format = "%Y-%m-%d")
+end_date <- as.character(as.Date(max(micromet_data$timestamp)))
 
 tower_begin <- EML::eml$beginDate(calendarDate = "2006-05-10")
-tower_end <- EML::eml$endDate(calendarDate = end_date)
+tower_end   <- EML::eml$endDate(calendarDate = end_date)
 
 tower_range <- EML::eml$rangeOfDates(
   beginDate = tower_begin,
@@ -293,7 +298,7 @@ Projects scopes include lter (default), gios, urex, ltreb, and som.
 
 ```{r construct-dataset}
 
-dataset <- create_dataset()
+dataset <- capeml::create_dataset()
 ```
 
 
@@ -354,6 +359,77 @@ list.files(pattern = paste0(packageNum, "_"), recursive = TRUE)
 lapply(list.files(pattern = paste0(packageNum, "_"), recursive = TRUE), gioseml::data_to_amz)
 ```
 
+
+# EDI
+
+## EDI: login
+
+```{r edi-login, eval=TRUE, echo=TRUE, message=TRUE}
+
+EDIutils::login(
+  userId   = keyring::key_get("edi_user"),
+  userPass = keyring::key_get("edi_pass")
+)
+
+```
+
+## EDI: evaluate
+
+```{r edi-evaluate, eval=TRUE, echo=TRUE, message=TRUE}
+
+evaluation <- EDIutils::evaluate_data_package(
+  eml         = paste0(packageIdent, ".xml"),
+  useChecksum = FALSE,
+  env         = "staging"
+)
+
+Sys.sleep(120)
+
+eval_status <- EDIutils::check_status_evaluate(
+  transaction = evaluation,
+  env         = "staging"
+)
+
+if (eval_status) {
+
+  # evaluation summary
+
+  EDIutils::read_evaluate_report_summary(
+    transaction = evaluation,
+    env         = "staging"
+  )
+
+}
+
+# evaluation detailed
+
+# EDIutils::read_evaluate_report(
+#   transaction = evaluation,
+#   env         = "staging"
+# )
+
+```
+
+## EDI: update
+
+```{r edi-update, eval=TRUE, echo=TRUE, message=TRUE}
+
+EDIutils::update_data_package(
+  eml         = paste0(packageIdent, ".xml"),
+  env         = "production"
+)
+
+```
+
+## EDI: logout
+
+```{r edi-logout, eval=TRUE, echo=TRUE, message=TRUE}
+
+EDIutils::logout()
+
+```
+
+
 ## copy and move XML as needed
 
 ```{r duplicate_xml_as_needed}
@@ -382,35 +458,4 @@ list.files(pattern = paste0(packageIdent, ".xml"), recursive = TRUE)
 # delete files
 file.remove(dir(pattern = paste0(packageNum, "_"), recursive = TRUE))
 file.remove(list.files(pattern = paste0(packageIdent, ".xml")), recursive = TRUE)
-```
-
-
-## EDI: evaluate
-
-```{r evaluate, eval=TRUE, echo=TRUE, message=TRUE}
-
-EDIutils::api_evaluate_data_package(
-  path        = getwd(),
-  package.id  = packageIdent,
-  environment = "production",
-  user.id     = "CAP",
-  user.pass   = keyring::key_get("EDI"),
-  affiliation = "EDI"
-)
-
-```
-
-## EDI: update
-
-```{r update, eval=TRUE, echo=TRUE, message=TRUE}
-
-EDIutils::api_update_data_package(
-  path        = getwd(),
-  package.id  = packageIdent,
-  environment = "production",
-  user.id     = "CAP",
-  user.pass   = keyring::key_get("EDI"),
-  affiliation = "EDI"
-)
-
 ```
