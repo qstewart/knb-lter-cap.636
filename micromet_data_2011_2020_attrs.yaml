@@ -1,0 +1,74 @@
+|
+  timestamp:
+    attributeName: timestamp
+    attributeDefinition: 'date and time of observation'
+    columnClasses: Date
+    formatString: 'YYYY-MM-DD hh:mm:ss'
+  site_code:
+    attributeName: site_code
+    attributeDefinition: 'study location'
+    columnClasses: factor
+  replicate:
+    attributeName: replicate
+    attributeDefinition: 'number of observations from the same station with identical timestamps but contrasting readings'
+    unit: 'number'
+    numberType: natural
+    minimum: 1
+    maximum: 3
+    columnClasses: numeric
+  airtc_avg:
+    attributeName: airtc_avg
+    attributeDefinition: 'air temperature'
+    unit: 'celsius'
+    numberType: real
+    minimum: -45.13
+    maximum: 48.01
+    columnClasses: numeric
+  rh:
+    attributeName: rh
+    attributeDefinition: 'relative humidity'
+    unit: 'dimensionless'
+    numberType: real
+    minimum: -7.955
+    maximum: 170.0
+    columnClasses: numeric
+  slrkw_avg:
+    attributeName: slrkw_avg
+    attributeDefinition: 'average solar radiation'
+    unit: 'kilowattPerMeterSquared'
+    numberType: real
+    minimum: 0.0
+    maximum: 1.341
+    columnClasses: numeric
+  slrmj_tot:
+    attributeName: slrmj_tot
+    attributeDefinition: 'total solar radiation'
+    unit: 'megajoulePerMeterSquared'
+    numberType: real
+    minimum: 0.0
+    maximum: 0.8048273
+    columnClasses: numeric
+  ws_ms_avg:
+    attributeName: ws_ms_avg
+    attributeDefinition: 'wind speed'
+    unit: 'metersPerSecond'
+    numberType: real
+    minimum: 0.0
+    maximum: 15.8
+    columnClasses: numeric
+  winddir:
+    attributeName: winddir
+    attributeDefinition: 'wind direction'
+    unit: 'degree'
+    numberType: real
+    minimum: -4.017
+    maximum: 355.0
+    columnClasses: numeric
+  rain_mm_tot:
+    attributeName: rain_mm_tot
+    attributeDefinition: 'precipitation'
+    unit: 'millimeter'
+    numberType: real
+    minimum: 0.0
+    maximum: 15.24
+    columnClasses: numeric

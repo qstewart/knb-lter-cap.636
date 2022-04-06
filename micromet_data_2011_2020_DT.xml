@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<eml:eml xmlns:eml="https://eml.ecoinformatics.org/eml-2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:stmml="http://www.xml-cml.org/schema/stmml-1.2" packageId="e7fe78b1-6ac0-4a07-a1a1-9a547bb8de11" system="uuid" xsi:schemaLocation="https://eml.ecoinformatics.org/eml-2.2.0 https://eml.ecoinformatics.org/eml-2.2.0/eml.xsd">
+  <attributeList>
+    <attribute>
+      <attributeName>timestamp</attributeName>
+      <attributeDefinition>date and time of observation</attributeDefinition>
+      <storageType>date</storageType>
+      <measurementScale>
+        <dateTime>
+          <formatString>YYYY-MM-DD hh:mm:ss</formatString>
+          <dateTimeDomain/>
+        </dateTime>
+      </measurementScale>
+    </attribute>
+    <attribute>
+      <attributeName>site_code</attributeName>
+      <attributeDefinition>study location</attributeDefinition>
+      <storageType>string</storageType>
+      <measurementScale>
+        <nominal>
+          <nonNumericDomain>
+            <enumeratedDomain>
+              <codeDefinition>
+                <code>DBG</code>
+                <definition>Desert Botanical Garden</definition>
+              </codeDefinition>
+              <codeDefinition>
+                <code>LDP</code>
+                <definition>Lost Dutchman State Park</definition>
+              </codeDefinition>
+            </enumeratedDomain>
+          </nonNumericDomain>
+        </nominal>
+      </measurementScale>
+    </attribute>
+    <attribute>
+      <attributeName>replicate</attributeName>
+      <attributeDefinition>number of observations from the same station with identical timestamps but contrasting readings</attributeDefinition>
+      <storageType>float</storageType>
+      <measurementScale>
+        <ratio>
+          <unit>
+            <standardUnit>number</standardUnit>
+          </unit>
+          <numericDomain>
+            <numberType>natural</numberType>
+            <bounds>
+              <minimum exclusive="false">1</minimum>
+              <maximum exclusive="false">3</maximum>
+            </bounds>
+          </numericDomain>
+        </ratio>
+      </measurementScale>
+    </attribute>
+    <attribute>
+      <attributeName>airtc_avg</attributeName>
+      <attributeDefinition>air temperature</attributeDefinition>
+      <storageType>float</storageType>
+      <measurementScale>
+        <ratio>
+          <unit>
+            <standardUnit>celsius</standardUnit>
+          </unit>
+          <numericDomain>
+            <numberType>real</numberType>
+            <bounds>
+              <minimum exclusive="false">-45.13</minimum>
+              <maximum exclusive="false">48.01</maximum>
+            </bounds>
+          </numericDomain>
+        </ratio>
+      </measurementScale>
+      <missingValueCode>
+        <code>NA</code>
+        <codeExplanation>missing value</codeExplanation>
+      </missingValueCode>
+    </attribute>
+    <attribute>
+      <attributeName>rh</attributeName>
+      <attributeDefinition>relative humidity</attributeDefinition>
+      <storageType>float</storageType>
+      <measurementScale>
+        <ratio>
+          <unit>
+            <standardUnit>dimensionless</standardUnit>
+          </unit>
+          <numericDomain>
+            <numberType>real</numberType>
+            <bounds>
+              <minimum exclusive="false">-7.955</minimum>
+              <maximum exclusive="false">170</maximum>
+            </bounds>
+          </numericDomain>
+        </ratio>
+      </measurementScale>
+      <missingValueCode>
+        <code>NA</code>
+        <codeExplanation>missing value</codeExplanation>
+      </missingValueCode>
+    </attribute>
+    <attribute>
+      <attributeName>slrkw_avg</attributeName>
+      <attributeDefinition>average solar radiation</attributeDefinition>
+      <storageType>float</storageType>
+      <measurementScale>
+        <ratio>
+          <unit>
+            <standardUnit>kilowattPerMeterSquared</standardUnit>
+          </unit>
+          <numericDomain>
+            <numberType>real</numberType>
+            <bounds>
+              <minimum exclusive="false">0</minimum>
+              <maximum exclusive="false">1.341</maximum>
+            </bounds>
+          </numericDomain>
+        </ratio>
+      </measurementScale>
+      <missingValueCode>
+        <code>NA</code>
+        <codeExplanation>missing value</codeExplanation>
+      </missingValueCode>
+    </attribute>
+    <attribute>
+      <attributeName>slrmj_tot</attributeName>
+      <attributeDefinition>total solar radiation</attributeDefinition>
+      <storageType>float</storageType>
+      <measurementScale>
+        <ratio>
+          <unit>
+            <customUnit>megajoulePerMeterSquared</customUnit>
+          </unit>
+          <numericDomain>
+            <numberType>real</numberType>
+            <bounds>
+              <minimum exclusive="false">0</minimum>
+              <maximum exclusive="false">0.8048273</maximum>
+            </bounds>
+          </numericDomain>
+        </ratio>
+      </measurementScale>
+      <missingValueCode>
+        <code>NA</code>
+        <codeExplanation>missing value</codeExplanation>
+      </missingValueCode>
+    </attribute>
+    <attribute>
+      <attributeName>ws_ms_avg</attributeName>
+      <attributeDefinition>wind speed</attributeDefinition>
+      <storageType>float</storageType>
+      <measurementScale>
+        <ratio>
+          <unit>
+            <standardUnit>metersPerSecond</standardUnit>
+          </unit>
+          <numericDomain>
+            <numberType>real</numberType>
+            <bounds>
+              <minimum exclusive="false">0</minimum>
+              <maximum exclusive="false">15.8</maximum>
+            </bounds>
+          </numericDomain>
+        </ratio>
+      </measurementScale>
+    </attribute>
+    <attribute>
+      <attributeName>winddir</attributeName>
+      <attributeDefinition>wind direction</attributeDefinition>
+      <storageType>float</storageType>
+      <measurementScale>
+        <ratio>
+          <unit>
+            <standardUnit>degree</standardUnit>
+          </unit>
+          <numericDomain>
+            <numberType>real</numberType>
+            <bounds>
+              <minimum exclusive="false">-4.017</minimum>
+              <maximum exclusive="false">355</maximum>
+            </bounds>
+          </numericDomain>
+        </ratio>
+      </measurementScale>
+      <missingValueCode>
+        <code>NA</code>
+        <codeExplanation>missing value</codeExplanation>
+      </missingValueCode>
+    </attribute>
+    <attribute>
+      <attributeName>rain_mm_tot</attributeName>
+      <attributeDefinition>precipitation</attributeDefinition>
+      <storageType>float</storageType>
+      <measurementScale>
+        <ratio>
+          <unit>
+            <standardUnit>millimeter</standardUnit>
+          </unit>
+          <numericDomain>
+            <numberType>real</numberType>
+            <bounds>
+              <minimum exclusive="false">0</minimum>
+              <maximum exclusive="false">15.24</maximum>
+            </bounds>
+          </numericDomain>
+        </ratio>
+      </measurementScale>
+      <missingValueCode>
+        <code>NA</code>
+        <codeExplanation>missing value</codeExplanation>
+      </missingValueCode>
+    </attribute>
+  </attributeList>
+  <coverage>
+    <temporalCoverage>
+      <rangeOfDates>
+        <beginDate>
+          <calendarDate>2011-01-01</calendarDate>
+        </beginDate>
+        <endDate>
+          <calendarDate>2020-12-31</calendarDate>
+        </endDate>
+      </rangeOfDates>
+    </temporalCoverage>
+  </coverage>
+  <entityDescription>Micrometeorological data from the CAP LTER weather stations located at the Desert Botanical Garden and Lost Dutchman State Park, AZ, USA sites. Data are 10-min averages of measurements collected at 5-second intervals. Data collected 2011 through 2020.</entityDescription>
+  <entityName>636_micromet_data_2011_2020.csv</entityName>
+  <numberOfRecords>1011428</numberOfRecords>
+  <physical>
+    <objectName>636_micromet_data_2011_2020.csv</objectName>
+    <size unit="bytes">65462576</size>
+    <authentication method="MD5">9f440bff50142a2fb511c488a0d328dc</authentication>
+    <dataFormat>
+      <textFormat>
+        <numHeaderLines>1</numHeaderLines>
+        <recordDelimiter>\r\n</recordDelimiter>
+        <attributeOrientation>column</attributeOrientation>
+        <simpleDelimited>
+          <fieldDelimiter>,</fieldDelimiter>
+          <quoteCharacter>"</quoteCharacter>
+        </simpleDelimited>
+      </textFormat>
+    </dataFormat>
+    <distribution>
+      <online>
+        <url function="download">https://data.gios.asu.edu/datasets/cap/636_micromet_data_2011_2020.csv</url>
+      </online>
+    </distribution>
+  </physical>
+</eml:eml>

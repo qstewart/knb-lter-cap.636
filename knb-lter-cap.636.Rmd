@@ -26,39 +26,61 @@ micromet_data <- DBI::dbGetQuery(pg, "
   ")
 
   micromet_data <- micromet_data |>
-  tidyr::pivot_wider(
-    names_from  = variablecode,
-    values_from = reading
-    ) |>
-  dplyr::mutate(
-    site_code = as.factor(site_code)
-  )
+    tidyr::pivot_wider(
+      names_from  = variablecode,
+      values_from = reading
+      ) |>
+    dplyr::mutate(
+      site_code = as.factor(site_code)
+    )
 
   names(micromet_data) <- tolower(names(micromet_data))
 
 ```
 
-# DT::micromet_data
+# DT: micromet_data_2021_present
 
-```{r micromet-data, eval=TRUE, warning=FALSE}
+```{r micromet-data-2021-present, eval=TRUE, warning=FALSE}
+
+micromet_data_2021_present <- micromet_data |>
+  dplyr::filter(timestamp >= "2021-01-01")
 
 try({
-  capeml::write_attributes(micromet_data, overwrite = FALSE)
-  capeml::write_factors(micromet_data, overwrite = FALSE)
+  capeml::write_attributes(micromet_data_2021_present, overwrite = FALSE)
+  capeml::write_factors(micromet_data_2021_present, overwrite = FALSE)
 })
 
-micromet_data_desc <- "Micrometeorological data from the CAP LTER weather stations located at the Desert Botanical Garden and Lost Dutchman State Park, AZ, USA sites. Data are 10-min averages of measurements collected at 5-second intervals."
+micromet_data_2021_present_desc <- "Micrometeorological data from the CAP LTER weather stations located at the Desert Botanical Garden and Lost Dutchman State Park, AZ, USA sites. Data are 10-min averages of measurements collected at 5-second intervals. Data collected 2021 through present."
 
-micromet_data_DT <- capeml::create_dataTable(
-  dfname         = micromet_data,
-  description    = micromet_data_desc,
+micromet_data_2021_present_DT <- capeml::create_dataTable(
+  dfname         = micromet_data_2021_present,
+  description    = micromet_data_2021_present_desc,
   dateRangeField = "timestamp",
   overwrite      = FALSE
 )
 
 ```
 
-# OE::micromet_program_DBG
+
+# DT: micromet_data_2006_2010
+
+```{r micromet-data-2006-2010, eval=TRUE}
+
+micromet_data_2006_2010_DT <- harvest_dataTable("micromet_data_2006_2010_DT.xml")
+
+```
+
+
+# DT: micromet_data_2011_2020
+
+```{r micromet-data-2011-2020, eval=TRUE}
+
+micromet_data_2011_2020_DT <- harvest_dataTable("micromet_data_2011_2020_DT.xml")
+
+```
+
+
+# OE: micromet_program_DBG
 
 ```{r micromet-program-DBG, eval=TRUE}
 
@@ -73,7 +95,7 @@ micromet_program_DBG_OE <- capeml::create_otherEntity(
 
 ```
 
-# OE::micromet_program_LDP
+# OE: micromet_program_LDP
 
 ```{r micromet-program-LDP, eval=TRUE}
 
@@ -88,7 +110,7 @@ micromet_program_LDP_OE <- capeml::create_otherEntity(
 
 ```
 
-# DT::maintenance_log
+# DT: maintenance_log
 
 ```{r maintenance-log, eval=TRUE, error=TRUE}
 
@@ -107,6 +129,7 @@ maintenance_log_DT <- capeml::create_dataTable(
   dfname         = maintenance_log,
   description    = maintenance_log_desc,
   dateRangeField = "date",
+  overwrite      = FALSE,
   projectNaming  = TRUE
 )
 
@@ -430,9 +453,9 @@ EDIutils::logout()
 ```
 
 
-## copy and move XML as needed
+# copy and move XML as needed
 
-```{r duplicate_xml_as_needed}
+```{r duplicate-xml-as-needed}
 
 # XML to S3
 gioseml::eml_to_amz(list.files(pattern = paste0(packageIdent, ".xml")))
@@ -444,18 +467,20 @@ file.copy(
 )
 ```
 
-## optionally delete data and xml files
+# delete data and xml files (optional)
 
-```{r optional: preview_files_to_delete}
+Preview files to delete:
 
-# preview files to delete
+```{r optional: preview-files-to-delete}
+
 dir(pattern = paste0(packageNum, "_"), recursive = TRUE)
 list.files(pattern = paste0(packageIdent, ".xml"), recursive = TRUE)
 ```
 
-```{r optional: delete_files}
+Delete files:
 
-# delete files
+```{r optional: delete-files}
+
 file.remove(dir(pattern = paste0(packageNum, "_"), recursive = TRUE))
 file.remove(list.files(pattern = paste0(packageIdent, ".xml")), recursive = TRUE)
 ```
