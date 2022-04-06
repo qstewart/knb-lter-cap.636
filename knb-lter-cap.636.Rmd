@@ -66,7 +66,7 @@ micromet_data_2021_present_DT <- capeml::create_dataTable(
 
 ```{r micromet-data-2006-2010, eval=TRUE}
 
-micromet_data_2006_2010_DT <- harvest_dataTable("micromet_data_2006_2010_DT.xml")
+micromet_data_2006_2010_DT <- capeml::harvest_dataTable("micromet_data_2006_2010_DT.xml")
 
 ```
 
@@ -75,7 +75,7 @@ micromet_data_2006_2010_DT <- harvest_dataTable("micromet_data_2006_2010_DT.xml"
 
 ```{r micromet-data-2011-2020, eval=TRUE}
 
-micromet_data_2011_2020_DT <- harvest_dataTable("micromet_data_2011_2020_DT.xml")
+micromet_data_2011_2020_DT <- capeml::harvest_dataTable("micromet_data_2011_2020_DT.xml")
 
 ```
 
