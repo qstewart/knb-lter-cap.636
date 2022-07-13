@@ -35,3 +35,7 @@ date,site,sensor,serial_number,calibrated,action,note
 2021-06-10,LDP,Apogee CS301,66723,2021-05-12,installed,NA
 2021-06-10,LDP,Vaisala HMP45C,A2730014,2020-05-28,removed,NA
 2021-06-10,LDP,Vaisala HMP45C,A5250001,2021-05-12,installed,NA
+2022-05-30,DBG,Apogee CS300,20336,2021-04-21,removed,NA
+2022-05-30,DBG,Apogee CS300,3076,2022-04-25,installed,NA
+2022-05-30,DBG,Vaisala HMP45C,A2640045,2021-04-16,removed,NA
+2022-05-30,DBG,Vaisala HMP45C,A2730014,2022-04-12,installed,NA
